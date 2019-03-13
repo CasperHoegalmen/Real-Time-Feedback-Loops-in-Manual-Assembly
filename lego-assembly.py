@@ -44,6 +44,7 @@ def RGB2HSI(frame):
             if R + G + B == 0:
                 saturation = 0
                 intensity = 0
+                hue = 0
 
             #Calculating Hue 
             if saturation != 0:
