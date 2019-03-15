@@ -1,3 +1,4 @@
+from decimal import *
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -36,41 +37,47 @@ def RGB2HSI(frame):
             G = frame[y, x, 1]
             R = frame[y, x, 2]
 
+            B = int(B)
+            G = int(G)
+            R = int(R)
+            
             #print("B is ", B)
-            print("B is ", B, "\nG is ", G, "\nR is ", R)
-
-            #Calculating Saturation
-            minimum_value = min(B, min(G, R))
-            saturation = 1 - 3 * (minimum_value) / (R + G + B)
-
-            #Calculating intensity
-            intensity = (B + G + R) / 3
-
-            #Calculating Hue 
-            if saturation != 0:
-                hueCalculation = 0.5 * ((R - G) + (R - B)) / math.sqrt(math.pow((R - G), 2) + (R - B) * (G - B))
-
-                # if H < -1:
-                #     H = -1
-                # elif H > 1:
-                #     H = 1
-
-                def hueRange(hueCalculation):
-                    return min(1, max(hueCalculation, -1))
-                H = hueRange(hueCalculation)
-
-                if B <= G:        
-                    hue = math.acos(H)
-                elif B > G:
-                    hue = 2 * math.pi - math.acos(H)
+            #print("B is ", B, "\nG is ", G, "\nR is ", R)
 
             #This is to ensure that we do not divide by 0 when calculating saturation
             if R + G + B == 0:
                 saturation = 0
                 intensity = 0
                 hue = 0
+            else:
+                #Calculating Saturation
+                minimum_value = min(B, min(G, R))
+                saturation = 1 - 3 * (minimum_value) / (R + G + B)
 
-            print("Hue is ", hue, "\nSaturation is ", saturation, "\nIntensity is ", intensity)
+                #print("What is saturation here?", 1 - 3 * (minimum_value) / (R + G + B))
+
+                #Calculating intensity
+                intensity = (B + G + R) / 3
+
+                #Calculating Hue 
+                if saturation != 0:
+                    hueCalculation = 0.5 * ((R - G) + (R - B)) / math.sqrt(math.pow((R - G), 2) + (R - B) * (G - B))
+
+                    # if H < -1:
+                    #     H = -1
+                    # elif H > 1:
+                    #     H = 1
+
+                    def hueRange(hueCalculation):
+                        return min(1, max(hueCalculation, -1))
+                    H = hueRange(hueCalculation)
+
+                    if B <= G:        
+                        hue = math.acos(H)
+                    elif B > G:
+                        hue = 2 * math.pi - math.acos(H)
+
+                    #print("Hue is ", hue, "\nSaturation is ", saturation, "\nIntensity is ", intensity)
 
             frame[y, x, 0] = hue * 255 / (2 * math.pi)
             frame[y, x, 1] = saturation * 255
