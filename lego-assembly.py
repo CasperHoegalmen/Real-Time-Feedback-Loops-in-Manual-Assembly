@@ -19,16 +19,15 @@ def cameraFrame():
     
         RGB2HSI(frame)
 
+        #hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HLS)
+        #cv2.imshow('hsv', hsv)
+
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     
 def RGB2HSI(frame):
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    #cv2.imshow('hsv', hsv)
-
     #Iterate over each pixel in the image
     for x in range(0, frame.shape[1]):
         for y in range(0, frame.shape[0]):
@@ -41,7 +40,6 @@ def RGB2HSI(frame):
             G = int(G)
             R = int(R)
             
-            #print("B is ", B)
             #print("B is ", B, "\nG is ", G, "\nR is ", R)
 
             #This is to ensure that we do not divide by 0 when calculating saturation
