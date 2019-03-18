@@ -1,87 +1,169 @@
-from decimal import *
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
-import math
 
 cap = cv2.VideoCapture(0)
-hue = 0
-B = 0
-G = 0
-R = 0
+
+#Threshold values for the blue brick
+blue_lowH = 92
+blue_highH = 130
+
+blue_lowS = 129
+blue_highS = 255
+
+blue_lowV = 116
+blue_highV = 255
+
+#Threshold values for the green brick
+green_lowH = 77
+green_highH = 179
+
+green_lowS = 136
+green_highS = 255
+
+green_lowV = 75
+green_highV = 255
+
+#Threshold values for the red brick
+red_lowH = 0
+red_highH = 17
+
+red_lowS = 140
+red_highS = 255
+
+red_lowV = 0
+red_highV = 210
+
+def nothing(x):
+    pass
+
+def colorTrackbars():
+    #Create trackbars for color thresholding
+    #Blue brick
+    cv2.namedWindow('Blue Control', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('Low Hue', 'Blue Control', blue_lowH, 179, nothing)
+    cv2.createTrackbar('High Hue', 'Blue Control', blue_highH, 179, nothing)
+
+    cv2.createTrackbar('Low Saturation', 'Blue Control', blue_lowS, 255, nothing)
+    cv2.createTrackbar('High Saturation', 'Blue Control', blue_highS, 255, nothing)
+
+    cv2.createTrackbar('Low Intenisty', 'Blue Control', blue_lowV, 255, nothing)
+    cv2.createTrackbar('High Intensity', 'Blue Control', blue_highV, 255, nothing)
+
+    #Green brick
+    cv2.namedWindow('Green Control', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('Low Hue', 'Green Control', green_lowH, 179, nothing)
+    cv2.createTrackbar('High Hue', 'Green Control', green_highH, 179, nothing)
+
+    cv2.createTrackbar('Low Saturation', 'Green Control', green_lowS, 255, nothing)
+    cv2.createTrackbar('High Saturation', 'Green Control', green_highS, 255, nothing)
+
+    cv2.createTrackbar('Low Intenisty', 'Green Control', green_lowV, 255, nothing)
+    cv2.createTrackbar('High Intensity', 'Green Control', green_highV, 255, nothing)
+
+    #Red brick
+    cv2.namedWindow('Red Control', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('Low Hue', 'Red Control', red_lowH, 179, nothing)
+    cv2.createTrackbar('High Hue', 'Red Control', red_highH, 179, nothing)
+
+    cv2.createTrackbar('Low Saturation', 'Red Control', red_lowS, 255, nothing)
+    cv2.createTrackbar('High Saturation', 'Red Control', red_highS, 255, nothing)
+
+    cv2.createTrackbar('Low Intenisty', 'Red Control', red_lowV, 255, nothing)
+    cv2.createTrackbar('High Intensity', 'Red Control', red_highV, 255, nothing)
 
 def cameraFrame():
+    colorTrackbars()
+
     while(cap.isOpened()):
         # Capture frame-by-frame
         ret, frame = cap.read()
 
-        # Calling the individual functions.
-    
-        RGB2HSI(frame)
+        #Flip the frame horizontally
+        frame = cv2.flip(frame, 1)
+        
+        #Convert the color space from BGR --> HSV
+        HSVFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        frameThreshold(frame, HSVFrame)
 
-        #hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HLS)
-        #cv2.imshow('hsv', hsv)
+        #Show the original camera frame and the HSV converted frame
+        cv2.imshow('Original Frame - HSV Frame', np.hstack((frame, HSVFrame)))
 
-        cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+def frameThreshold(frame, HSVFrame):
+    #Get the trackbar position
+    #Blue brick
+    blue_lowH = cv2.getTrackbarPos('Low Hue', 'Blue Control')
+    blue_highH = cv2.getTrackbarPos('High Hue', 'Blue Control')
+
+    blue_lowS = cv2.getTrackbarPos('Low Saturation', 'Blue Control')
+    blue_highS = cv2.getTrackbarPos('High Saturation', 'Blue Control')
+
+    blue_lowV = cv2.getTrackbarPos('Low Intensity', 'Blue Control')
+    blue_highV = cv2.getTrackbarPos('High Intensity', 'Blue Control')
+
+    #Green brick
+    green_lowH = cv2.getTrackbarPos('Low Hue', 'Green Control')
+    green_highH = cv2.getTrackbarPos('High Hue', 'Green Control')
+
+    green_lowS = cv2.getTrackbarPos('Low Saturation', 'Green Control')
+    green_highS = cv2.getTrackbarPos('High Saturation', 'Green Control')
+
+    green_lowV = cv2.getTrackbarPos('Low Intensity', 'Green Control')
+    green_highV = cv2.getTrackbarPos('High Intensity', 'Green Control')
+
+    #Red brick
+    red_lowH = cv2.getTrackbarPos('Low Hue', 'Red Control')
+    red_highH = cv2.getTrackbarPos('High Hue', 'Red Control')
+
+    red_lowS = cv2.getTrackbarPos('Low Saturation', 'Red Control')
+    red_highS = cv2.getTrackbarPos('High Saturation', 'Red Control')
+
+    red_lowV = cv2.getTrackbarPos('Low Intensity', 'Red Control')
+    red_highV = cv2.getTrackbarPos('High Intensity', 'Red Control')
+
+    #Create 2 arrays that consist of the low- and high trackbar positions. These are to be used to threshold the HSV image for the specific color
+    #Blue brick
+    lower_blue = np.array([blue_lowH, blue_lowS, blue_lowV])
+    upper_blue = np.array([blue_highH, blue_highS, blue_highV])
     
-def RGB2HSI(frame):
-    #Iterate over each pixel in the image
-    for x in range(0, frame.shape[1]):
-        for y in range(0, frame.shape[0]):
-            #Split the B, G, R channels (it is BGR and not RGB because read() function in openCV returns it in that format)
-            B = frame[y, x, 0]
-            G = frame[y, x, 1]
-            R = frame[y, x, 2]
+    #Green brick
+    lower_green = np.array([green_lowH, green_lowS, green_lowV])
+    upper_green = np.array([green_highH, green_highS, green_highV])
 
-            B = int(B)
-            G = int(G)
-            R = int(R)
-            
-            #print("B is ", B, "\nG is ", G, "\nR is ", R)
+    #Red brick
+    lower_red = np.array([red_lowH, red_lowS, red_lowV])
+    upper_red = np.array([red_highH, red_highS, red_highV])
 
-            #This is to ensure that we do not divide by 0 when calculating saturation
-            if R + G + B == 0:
-                saturation = 0
-                intensity = 0
-                hue = 0
-            else:
-                #Calculating Saturation
-                minimum_value = min(B, min(G, R))
-                saturation = 1 - 3 * (minimum_value) / (R + G + B)
+    #Apply a Gaussian blur that has 11x11 kernel size to the HSV frame 
+    HSVFrame = cv2.GaussianBlur(HSVFrame, (11, 11), 0)
 
-                #print("What is saturation here?", 1 - 3 * (minimum_value) / (R + G + B))
+    #Threshold the HSV image to create a mask that is the values within the threshold range
+    blueMask = cv2.inRange(HSVFrame, lower_blue, upper_blue)
+    greenMask = cv2.inRange(HSVFrame, lower_green, upper_green)
+    redMask = cv2.inRange(HSVFrame, lower_red, upper_red)
 
-                #Calculating intensity
-                intensity = (B + G + R) / 3
+    #Use Bitwise-AND operation to mask the original image with blue, green, and red color masks
+    blueResult = cv2.bitwise_and(frame, frame, mask = blueMask)
+    greenResult = cv2.bitwise_and(frame, frame, mask = greenMask)
+    redResult = cv2.bitwise_and(frame, frame, mask = redMask)
 
-                #Calculating Hue 
-                if saturation != 0:
-                    hueCalculation = 0.5 * ((R - G) + (R - B)) / math.sqrt(math.pow((R - G), 2) + (R - B) * (G - B))
+    #Composite mask
+    brMask = blueMask + redMask
+    compResult = cv2.bitwise_and(frame, frame, mask = brMask)
 
-                    # if H < -1:
-                    #     H = -1
-                    # elif H > 1:
-                    #     H = 1
+    #Show...
+    cv2.imshow('Blue Color Mask', blueMask)
+    cv2.imshow('Green Color Mask', greenMask)
+    cv2.imshow('Red Color Mask', redMask)
+    cv2.imshow('Frame and Blue Mask', blueResult)
+    cv2.imshow('Frame and Green Mask', greenResult)
+    cv2.imshow('Frame and Red Mask', redResult)
 
-                    def hueRange(hueCalculation):
-                        return min(1, max(hueCalculation, -1))
-                    H = hueRange(hueCalculation)
-
-                    if B <= G:        
-                        hue = math.acos(H)
-                    elif B > G:
-                        hue = 2 * math.pi - math.acos(H)
-
-                    #print("Hue is ", hue, "\nSaturation is ", saturation, "\nIntensity is ", intensity)
-
-            frame[y, x, 0] = hue * 255 / (2 * math.pi)
-            frame[y, x, 1] = saturation * 255
-            frame[y, x, 2] = intensity
+    cv2.imshow('Composite Frame', compResult)
 
 cameraFrame()
 # When everything done, release the capture
-cap.release()
 cv2.destroyAllWindows()
+cap.release()
