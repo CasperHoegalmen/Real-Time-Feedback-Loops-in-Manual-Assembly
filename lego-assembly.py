@@ -4,34 +4,40 @@ import cv2
 cap = cv2.VideoCapture(0)
 
 #Threshold values for the blue brick
-blue_lowH = 92
-blue_highH = 130
+blue_lowH = 97
+blue_highH = 134
 
-blue_lowS = 129
-blue_highS = 255
+blue_lowS = 236
+blue_highS = 246
 
 blue_lowV = 116
 blue_highV = 255
 
 #Threshold values for the green brick
-green_lowH = 77
-green_highH = 179
+green_lowH = 65
+green_highH = 86
 
-green_lowS = 136
+green_lowS = 204
 green_highS = 255
 
-green_lowV = 75
+green_lowV = 93
 green_highV = 255
 
 #Threshold values for the red brick
 red_lowH = 0
-red_highH = 17
+red_highH = 4
 
-red_lowS = 140
+red_lowS = 227
 red_highS = 255
 
 red_lowV = 0
 red_highV = 210
+
+#Kernels for morphology. The size of them might vary depending on the different needs of the channels, hence the color specific kernels.
+generalKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
+blueKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
+greenKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
+redKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 
 def nothing(x):
     pass
@@ -144,6 +150,16 @@ def frameThreshold(frame, HSVFrame):
     greenMask = cv2.inRange(HSVFrame, lower_green, upper_green)
     redMask = cv2.inRange(HSVFrame, lower_red, upper_red)
 
+    #Morphology - Apply whatever is needed for the current situation.
+    #blueMaskMorph = cv2.morphologyEx(blueMask, cv2.MORPH_CLOSE, generalKernel)
+    #greenMaskMorph = cv2.morphologyEx(greenMask, cv2.MORPH_CLOSE, kernel)
+    #redMaskMorph = cv2.morphologyEx(redMask, cv2.MORPH_CLOSE, kernel)
+
+    #Use Bitwise-AND operation to mask the original image with blue, green, and red color masks + the morphology
+    #blueResultMorph = cv2.bitwise_and(frame, frame, mask = blueMaskMorph)
+    #greenResultMorph = cv2.bitwise_and(frame, frame, mask = greenMaskMorph)
+    #redResultMorph = cv2.bitwise_and(frame, frame, mask = redMaskMorph)
+
     #Use Bitwise-AND operation to mask the original image with blue, green, and red color masks
     blueResult = cv2.bitwise_and(frame, frame, mask = blueMask)
     greenResult = cv2.bitwise_and(frame, frame, mask = greenMask)
@@ -153,7 +169,7 @@ def frameThreshold(frame, HSVFrame):
     brMask = blueMask + redMask
     compResult = cv2.bitwise_and(frame, frame, mask = brMask)
 
-    #Show...
+    #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     cv2.imshow('Blue Color Mask', blueMask)
     cv2.imshow('Green Color Mask', greenMask)
     cv2.imshow('Red Color Mask', redMask)
@@ -162,6 +178,7 @@ def frameThreshold(frame, HSVFrame):
     cv2.imshow('Frame and Red Mask', redResult)
 
     cv2.imshow('Composite Frame', compResult)
+
 
 cameraFrame()
 # When everything done, release the capture
