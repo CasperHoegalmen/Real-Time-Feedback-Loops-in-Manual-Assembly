@@ -7,7 +7,7 @@ cap = cv2.VideoCapture(0)
 blue_lowH = 97
 blue_highH = 134
 
-blue_lowS = 236
+blue_lowS = 130
 blue_highS = 246
 
 blue_lowV = 116
@@ -17,7 +17,7 @@ blue_highV = 255
 green_lowH = 65
 green_highH = 86
 
-green_lowS = 204
+green_lowS = 150
 green_highS = 255
 
 green_lowV = 93
@@ -165,29 +165,59 @@ def frameThreshold(frame, HSVFrame):
     #greenResult = cv2.bitwise_and(frame, frame, mask = greenMask)
     #redResult = cv2.bitwise_and(frame, frame, mask = redMask)
 
-    frameMorph(generalKernel, frame, blueMask, cv2.MORPH_CLOSE)
-    frameMorph(generalKernel, frame, greenMask, cv2.MORPH_CLOSE)
-    frameMorph(generalKernel, frame, redMask, cv2.MORPH_CLOSE)
+    blueMaskMorph = frameMorph(generalKernel, frame, blueMask, cv2.MORPH_CLOSE)
+    greenMaskMorph = frameMorph(generalKernel, frame, greenMask, cv2.MORPH_CLOSE)
+    redMaskMorph = frameMorph(generalKernel, frame, redMask, cv2.MORPH_CLOSE)
 
+    
     #Composite mask
-    brMask = blueMask + redMask
+    brMask = blueMask + greenMask
     compResult = cv2.bitwise_and(frame, frame, mask = brMask)
 
+    blueBlobs2x4 = blobAnalysis(blueMaskMorph, 4000, 10000, 'blue', '2x4')
+    greenBlobs2x2 = blobAnalysis(greenMaskMorph, 300, 3000, 'green', '2x2')
+
+    finalNumberOfBlobs = blueBlobs2x4 + greenBlobs2x2
+ 
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
-    cv2.imshow('Blue Color Mask', blueMask)
-    cv2.imshow('Green Color Mask', greenMask)
-    cv2.imshow('Red Color Mask', redMask)
+    # cv2.imshow('Blue Color Mask', blueBlobs2x4)
+    cv2.imshow('Blue Color Mask old', blueMaskMorph)
+    cv2.imshow('Green Color Mask', greenMaskMorph)
+    cv2.imshow('Red Color Mask', redMaskMorph)
     #cv2.imshow('Frame and Blue Mask', blueResult)
     #cv2.imshow('Frame and Green Mask', greenResult)
     #cv2.imshow('Frame and Red Mask', redResult)
 
-    cv2.imshow('Composite Frame', compResult)
+    frameWithKeypoints = cv2.drawKeypoints(compResult, finalNumberOfBlobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv2.imshow('Composite Frame', frameWithKeypoints)
+    
 
 def frameMorph(kernel, frameOriginal, frameToBeMorphed, morphologyMethod):
     maskMorph = cv2.morphologyEx(frameToBeMorphed, morphologyMethod, kernel)
-    resultMorph = cv2.bitwise_and(frameOriginal, frameOriginal, mask = maskMorph)
-    cv2.imshow('Frame and Blue Mask', resultMorph)
-    return resultMorph
+    # resultMorph = cv2.bitwise_and(frameOriginal, frameOriginal, mask = maskMorph)
+    # cv2.imshow('Frame and Blue Mask', resultMorph)
+    return maskMorph
+
+
+def blobAnalysis(frame, minArea, maxArea, color, typeOfBrick):
+    params = cv2.SimpleBlobDetector_Params()
+
+    # Change thresholds
+    params.filterByColor = True
+    params.blobColor = 255
+
+    params.filterByArea = True
+    params.minArea = minArea
+    params.maxArea = maxArea
+    
+    blobDetector = cv2.SimpleBlobDetector_create(params)
+    keypoints = blobDetector.detect(frame)
+    # frame_with_keypoints = cv2.drawKeypoints(frame, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+    if(len(keypoints) > 0):
+        print('Number of ' + str(color) + ' ' + str(typeOfBrick) + ' Bricks: ' + str(len(keypoints)))
+
+    return keypoints
 
 cameraFrame()
 # When everything done, release the capture
