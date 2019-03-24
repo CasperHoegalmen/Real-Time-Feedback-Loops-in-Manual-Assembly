@@ -39,7 +39,6 @@ blueKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 greenKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 redKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 
-
 def nothing(x):
     pass
 
@@ -53,7 +52,7 @@ def colorTrackbars():
     cv2.createTrackbar('Low Saturation', 'Blue Control', blue_lowS, 255, nothing)
     cv2.createTrackbar('High Saturation', 'Blue Control', blue_highS, 255, nothing)
 
-    cv2.createTrackbar('Low Intenisty', 'Blue Control', blue_lowV, 255, nothing)
+    cv2.createTrackbar('Low Intensity', 'Blue Control', blue_lowV, 255, nothing)
     cv2.createTrackbar('High Intensity', 'Blue Control', blue_highV, 255, nothing)
 
     #Green brick
@@ -64,7 +63,7 @@ def colorTrackbars():
     cv2.createTrackbar('Low Saturation', 'Green Control', green_lowS, 255, nothing)
     cv2.createTrackbar('High Saturation', 'Green Control', green_highS, 255, nothing)
 
-    cv2.createTrackbar('Low Intenisty', 'Green Control', green_lowV, 255, nothing)
+    cv2.createTrackbar('Low Intensity', 'Green Control', green_lowV, 255, nothing)
     cv2.createTrackbar('High Intensity', 'Green Control', green_highV, 255, nothing)
 
     #Red brick
@@ -75,7 +74,7 @@ def colorTrackbars():
     cv2.createTrackbar('Low Saturation', 'Red Control', red_lowS, 255, nothing)
     cv2.createTrackbar('High Saturation', 'Red Control', red_highS, 255, nothing)
 
-    cv2.createTrackbar('Low Intenisty', 'Red Control', red_lowV, 255, nothing)
+    cv2.createTrackbar('Low Intensity', 'Red Control', red_lowV, 255, nothing)
     cv2.createTrackbar('High Intensity', 'Red Control', red_highV, 255, nothing)
 
 def cameraFrame():
@@ -85,16 +84,13 @@ def cameraFrame():
         # Capture frame-by-frame
         ret, frame = cap.read()
 
-
         #Flip the frame horizontally
         frame = cv2.flip(frame, 1)
         
         #Convert the color space from BGR --> HSV
         HSVFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        compResult = frameThreshold(frame, HSVFrame)
-        blobAnalysis(compResult)
-        
-        
+        frameThreshold(frame, HSVFrame)
+
         #Show the original camera frame and the HSV converted frame
         cv2.imshow('Original Frame - HSV Frame', np.hstack((frame, HSVFrame)))
 
@@ -157,40 +153,41 @@ def frameThreshold(frame, HSVFrame):
     #Morphology - Apply whatever is needed for the current situation.
     #blueMaskMorph = cv2.morphologyEx(blueMask, cv2.MORPH_CLOSE, generalKernel)
     #greenMaskMorph = cv2.morphologyEx(greenMask, cv2.MORPH_CLOSE, kernel)
-    redMaskMorph = cv2.morphologyEx(redMask, cv2.MORPH_CLOSE, redKernel)
+    #redMaskMorph = cv2.morphologyEx(redMask, cv2.MORPH_CLOSE, kernel)
 
     #Use Bitwise-AND operation to mask the original image with blue, green, and red color masks + the morphology
     #blueResultMorph = cv2.bitwise_and(frame, frame, mask = blueMaskMorph)
     #greenResultMorph = cv2.bitwise_and(frame, frame, mask = greenMaskMorph)
-    redResultMorph = cv2.bitwise_and(frame, frame, mask = redMaskMorph)
+    #redResultMorph = cv2.bitwise_and(frame, frame, mask = redMaskMorph)
 
     #Use Bitwise-AND operation to mask the original image with blue, green, and red color masks
-    blueResult = cv2.bitwise_and(frame, frame, mask = blueMask)
-    greenResult = cv2.bitwise_and(frame, frame, mask = greenMask)
-    redResult = cv2.bitwise_and(frame, frame, mask = redMask)
+    #blueResult = cv2.bitwise_and(frame, frame, mask = blueMask)
+    #greenResult = cv2.bitwise_and(frame, frame, mask = greenMask)
+    #redResult = cv2.bitwise_and(frame, frame, mask = redMask)
+
+    frameMorph(generalKernel, frame, blueMask, cv2.MORPH_CLOSE)
+    frameMorph(generalKernel, frame, greenMask, cv2.MORPH_CLOSE)
+    frameMorph(generalKernel, frame, redMask, cv2.MORPH_CLOSE)
 
     #Composite mask
     brMask = blueMask + redMask
     compResult = cv2.bitwise_and(frame, frame, mask = brMask)
-    return compResult
 
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     cv2.imshow('Blue Color Mask', blueMask)
     cv2.imshow('Green Color Mask', greenMask)
     cv2.imshow('Red Color Mask', redMask)
-    cv2.imshow('Frame and Blue Mask', blueResult)
-    cv2.imshow('Frame and Green Mask', greenResult)
-    cv2.imshow('Frame and Red Mask', redResult)
-    cv2.imshow('Frame and Red Mask + Morph', redResultMorph)
+    #cv2.imshow('Frame and Blue Mask', blueResult)
+    #cv2.imshow('Frame and Green Mask', greenResult)
+    #cv2.imshow('Frame and Red Mask', redResult)
 
     cv2.imshow('Composite Frame', compResult)
 
-def blobAnalysis(frame):
-    blobDetector = cv2.SimpleBlobDetector_create()
-    keypoints = blobDetector.detect(frame)
-    frame_with_keypoints = cv2.drawKeypoints(frame, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-    cv2.imshow('Blobs', frame_with_keypoints)
+def frameMorph(kernel, frameOriginal, frameToBeMorphed, morphologyMethod):
+    maskMorph = cv2.morphologyEx(frameToBeMorphed, morphologyMethod, kernel)
+    resultMorph = cv2.bitwise_and(frameOriginal, frameOriginal, mask = maskMorph)
+    cv2.imshow('Frame and Blue Mask', resultMorph)
+    return resultMorph
 
 cameraFrame()
 # When everything done, release the capture
