@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 #Threshold values for the blue brick
 blue_lowH = 97
@@ -14,8 +14,8 @@ blue_lowV = 116
 blue_highV = 255
 
 #Threshold values for the green brick
-green_lowH = 65
-green_highH = 86
+green_lowH = 39
+green_highH = 97
 
 green_lowS = 150
 green_highS = 255
@@ -174,10 +174,12 @@ def frameThreshold(frame, HSVFrame):
     brMask = blueMask + greenMask
     compResult = cv2.bitwise_and(frame, frame, mask = brMask)
 
-    blueBlobs2x4 = blobAnalysis(blueMaskMorph, 4000, 10000, 'blue', '2x4')
-    greenBlobs2x2 = blobAnalysis(greenMaskMorph, 300, 3000, 'green', '2x2')
+    blubeBlobs2x2 = blobAnalysis(blueMaskMorph, 5000, 8000, 'blue', '2x2')
+    blueBlobs2x4 = blobAnalysis(blueMaskMorph, 8000, 15000, 'blue', '2x4')
+    greenBlobs2x2 = blobAnalysis(greenMaskMorph, 5000, 8000, 'green', '2x2')
+    greenBlobs2x4 = blobAnalysis(greenMaskMorph, 8000, 15000, 'green', '2x4')
 
-    finalNumberOfBlobs = blueBlobs2x4 + greenBlobs2x2
+    finalNumberOfBlobs = blueBlobs2x4 + blubeBlobs2x2 + greenBlobs2x2 + greenBlobs2x4 
  
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     # cv2.imshow('Blue Color Mask', blueBlobs2x4)
