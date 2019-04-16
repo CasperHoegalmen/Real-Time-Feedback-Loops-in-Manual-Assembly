@@ -1,7 +1,7 @@
 import numpy as np
 from pyueye import ueye
-import cv2
 from lego_api import CameraApi
+import cv2
 
 # Variables
 # Threshold values for the blue brick
