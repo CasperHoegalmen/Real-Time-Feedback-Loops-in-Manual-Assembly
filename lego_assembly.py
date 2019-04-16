@@ -5,196 +5,185 @@ from lego_api import CameraApi
 
 # Variables
 # Threshold values for the blue brick
-blue_lowH = 70
-blue_highH = 135
+blue_low_hue = 70
+blue_high_hue = 135
 
-blue_lowS = 0
-blue_highS = 246
+blue_low_sat = 0
+blue_high_sat = 246
 
-blue_lowV = 0
-blue_highV = 255
+blue_low_val = 0
+blue_high_val = 255
 
 # Threshold values for the green brick
-green_lowH = 35
-green_highH = 65
+green_low_hue = 35
+green_high_hue = 65
 
-green_lowS = 141
-green_highS = 211
+green_low_sat = 141
+green_high_sat = 211
 
-green_lowV = 0
-green_highV = 157
+green_low_val = 0
+green_high_val = 157
 
 # Threshold values for the red brick
-red_lowH = 0
-red_highH = 7
+red_low_hue = 0
+red_high_hue = 7
 
-red_lowS = 0
-red_highS = 255
+red_low_sat = 0
+red_high_sat = 255
 
-red_lowV = 0
-red_highV = 255
+red_low_val = 0
+red_high_val = 255
 
 # Morphology Kernel
-generalKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
+general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 
+def color_trackbars():
+    # Create trackbars for color thresholding
+    # Blue brick
+    cv2.namedWindow('Blue Control', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('Low Hue', 'Blue Control', blue_low_hue, 179, nothing)
+    cv2.createTrackbar('High Hue', 'Blue Control', blue_high_hue, 179, nothing)
+
+    cv2.createTrackbar('Low Saturation', 'Blue Control', blue_low_sat, 255, nothing)
+    cv2.createTrackbar('High Saturation', 'Blue Control', blue_high_sat, 255, nothing)
+
+    cv2.createTrackbar('Low Intensity', 'Blue Control', blue_low_val, 255, nothing)
+    cv2.createTrackbar('High Intensity', 'Blue Control', blue_high_val, 255, nothing)
+
+    # Green brick
+    cv2.namedWindow('Green Control', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('Low Hue', 'Green Control', green_low_hue, 179, nothing)
+    cv2.createTrackbar('High Hue', 'Green Control', green_high_hue, 179, nothing)
+
+    cv2.createTrackbar('Low Saturation', 'Green Control', green_low_sat, 255, nothing)
+    cv2.createTrackbar('High Saturation', 'Green Control', green_high_sat, 255, nothing)
+
+    cv2.createTrackbar('Low Intensity', 'Green Control', green_low_val, 255, nothing)
+    cv2.createTrackbar('High Intensity', 'Green Control', green_high_val, 255, nothing)
+
+    # Red brick
+    cv2.namedWindow('Red Control', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('Low Hue', 'Red Control', red_low_hue, 179, nothing)
+    cv2.createTrackbar('High Hue', 'Red Control', red_high_hue, 179, nothing)
+
+    cv2.createTrackbar('Low Saturation', 'Red Control', red_low_sat, 255, nothing)
+    cv2.createTrackbar('High Saturation', 'Red Control', red_high_sat, 255, nothing)
+
+    cv2.createTrackbar('Low Intensity', 'Red Control', red_low_val, 255, nothing)
+    cv2.createTrackbar('High Intensity', 'Red Control', red_high_val, 255, nothing)
 
 def nothing(x):
     pass
 
-def frameMorph(kernel, frameOriginal, frameToBeMorphed, morphologyMethod):
-    maskMorph = cv2.morphologyEx(frameToBeMorphed, morphologyMethod, kernel)
-    # resultMorph = cv2.bitwise_and(frameOriginal, frameOriginal, mask = maskMorph)
-    # cv2.imshow('Frame and Blue Mask', resultMorph)
-    return maskMorph
+def frame_threshold(frame, hsv_frame):
+    # Get the trackbar position
+    # Blue brick
+    blue_low_hue = cv2.getTrackbarPos('Low Hue', 'Blue Control')
+    blue_high_hue = cv2.getTrackbarPos('High Hue', 'Blue Control')
 
-def frameThreshold(frame, HSVFrame):
-    #Get the trackbar position
-    #Blue brick
-    blue_lowH = cv2.getTrackbarPos('Low Hue', 'Blue Control')
-    blue_highH = cv2.getTrackbarPos('High Hue', 'Blue Control')
+    blue_low_sat = cv2.getTrackbarPos('Low Saturation', 'Blue Control')
+    blue_high_sat = cv2.getTrackbarPos('High Saturation', 'Blue Control')
 
-    blue_lowS = cv2.getTrackbarPos('Low Saturation', 'Blue Control')
-    blue_highS = cv2.getTrackbarPos('High Saturation', 'Blue Control')
-
-    blue_lowV = cv2.getTrackbarPos('Low Intensity', 'Blue Control')
-    blue_highV = cv2.getTrackbarPos('High Intensity', 'Blue Control')
+    blue_low_val = cv2.getTrackbarPos('Low Intensity', 'Blue Control')
+    blue_high_val = cv2.getTrackbarPos('High Intensity', 'Blue Control')
 
     #Green brick
-    green_lowH = cv2.getTrackbarPos('Low Hue', 'Green Control')
-    green_highH = cv2.getTrackbarPos('High Hue', 'Green Control')
+    green_low_hue = cv2.getTrackbarPos('Low Hue', 'Green Control')
+    green_high_hue = cv2.getTrackbarPos('High Hue', 'Green Control')
 
-    green_lowS = cv2.getTrackbarPos('Low Saturation', 'Green Control')
-    green_highS = cv2.getTrackbarPos('High Saturation', 'Green Control')
+    green_low_sat = cv2.getTrackbarPos('Low Saturation', 'Green Control')
+    green_high_sat = cv2.getTrackbarPos('High Saturation', 'Green Control')
 
-    green_lowV = cv2.getTrackbarPos('Low Intensity', 'Green Control')
-    green_highV = cv2.getTrackbarPos('High Intensity', 'Green Control')
+    green_low_val = cv2.getTrackbarPos('Low Intensity', 'Green Control')
+    green_high_val = cv2.getTrackbarPos('High Intensity', 'Green Control')
 
     #Red brick
-    red_lowH = cv2.getTrackbarPos('Low Hue', 'Red Control')
-    red_highH = cv2.getTrackbarPos('High Hue', 'Red Control')
+    red_low_hue = cv2.getTrackbarPos('Low Hue', 'Red Control')
+    red_high_hue = cv2.getTrackbarPos('High Hue', 'Red Control')
 
-    red_lowS = cv2.getTrackbarPos('Low Saturation', 'Red Control')
-    red_highS = cv2.getTrackbarPos('High Saturation', 'Red Control')
+    red_low_sat = cv2.getTrackbarPos('Low Saturation', 'Red Control')
+    red_high_sat = cv2.getTrackbarPos('High Saturation', 'Red Control')
 
-    red_lowV = cv2.getTrackbarPos('Low Intensity', 'Red Control')
-    red_highV = cv2.getTrackbarPos('High Intensity', 'Red Control')
+    red_low_val = cv2.getTrackbarPos('Low Intensity', 'Red Control')
+    red_high_val = cv2.getTrackbarPos('High Intensity', 'Red Control')
 
     #Create 2 arrays that consist of the low- and high trackbar positions. These are to be used to threshold the HSV image for the specific color
     #Blue brick
-    lower_blue = np.array([blue_lowH, blue_lowS, blue_lowV])
-    upper_blue = np.array([blue_highH, blue_highS, blue_highV])
+    lower_blue = np.array([blue_low_hue, blue_low_sat, blue_low_val])
+    upper_blue = np.array([blue_high_hue, blue_high_sat, blue_high_val])
     
     #Green brick
-    lower_green = np.array([green_lowH, green_lowS, green_lowV])
-    upper_green = np.array([green_highH, green_highS, green_highV])
+    lower_green = np.array([green_low_hue, green_low_sat, green_low_val])
+    upper_green = np.array([green_high_hue, green_high_sat, green_high_val])
 
     #Red brick
-    lower_red = np.array([red_lowH, red_lowS, red_lowV])
-    upper_red = np.array([red_highH, red_highS, red_highV])
+    lower_red = np.array([red_low_hue, red_low_sat, red_low_val])
+    upper_red = np.array([red_high_hue, red_high_sat, red_high_val])
 
     #Apply a Gaussian blur that has 11x11 kernel size to the HSV frame 
-    HSVFrame = cv2.GaussianBlur(HSVFrame, (11, 11), 0)
+    hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
 
     #Threshold the HSV image to create a mask that is the values within the threshold range
-    blueMask = cv2.inRange(HSVFrame, lower_blue, upper_blue)
-    greenMask = cv2.inRange(HSVFrame, lower_green, upper_green)
-    redMask = cv2.inRange(HSVFrame, lower_red, upper_red)
+    blue_mask = cv2.inRange(hsv_frame, lower_blue, upper_blue)
+    green_mask = cv2.inRange(hsv_frame, lower_green, upper_green)
+    red_mask = cv2.inRange(hsv_frame, lower_red, upper_red)
 
-    blueMaskMorph = frameMorph(generalKernel, frame, blueMask, cv2.MORPH_CLOSE)
-    greenMaskMorph = frameMorph(generalKernel, frame, greenMask, cv2.MORPH_CLOSE)
-    redMaskMorph = frameMorph(generalKernel, frame, redMask, cv2.MORPH_CLOSE)
+    blue_mask_morph = frame_morph(general_kernel, frame, blue_mask, cv2.MORPH_CLOSE)
+    green_mask_morph = frame_morph(general_kernel, frame, green_mask, cv2.MORPH_CLOSE)
+    red_mask_morph = frame_morph(general_kernel, frame, red_mask, cv2.MORPH_CLOSE)
 
     #Composite mask
-    brMask = blueMaskMorph + redMaskMorph
-    finalMask = brMask + greenMaskMorph
-    compResult = cv2.bitwise_and(frame, frame, mask = finalMask)
+    blue_red_mask = blue_mask_morph + red_mask_morph
+    final_mask = blue_red_mask + green_mask_morph
+    comp_result = cv2.bitwise_and(frame, frame, mask = final_mask)
 
     # Perform Blob Analysis
-    # blubeBlobs2x2 = blobAnalysis(blueMaskMorph, 5000, 8000, 'blue', '2x2')
-    blueBlobs2x4 = blobAnalysis(blueMaskMorph, 3300, 3600, 'blue', '2x4')
-    # greenBlobs2x2 = blobAnalysis(greenMaskMorph, 100, 8000, 'green', '2x2')
-    greenBlobs2x4 = blobAnalysis(greenMaskMorph, 3300, 3600, 'green', '2x4')
-    # redBlobs2x2 = blobAnalysis(redMaskMorph, 5000, 8000, 'red', '2x2')
-    redBlobs2x4 = blobAnalysis(redMaskMorph, 3300, 3600, 'red', '2x4')
-
+    blue_blobs_2x4 = blob_analysis(blue_mask_morph, 3300, 3600, 'blue', '2x4')
+    green_blobs_2x4 = blob_analysis(green_mask_morph, 3300, 3600, 'green', '2x4')
+    red_blobs_2x4 = blob_analysis(red_mask_morph, 3300, 3600, 'red', '2x4')
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
-    finalNumberOfBlobs = blueBlobs2x4 + redBlobs2x4 + greenBlobs2x4 #+ blubeBlobs2x2 + greenBlobs2x2 + greenBlobs2x4 + redBlobs2x2 + 
+    final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4 
  
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     # cv2.imshow('Blue Color Mask', blueBlobs2x4)
-    cv2.imshow('Blue Color Mask old', blueMaskMorph)
-    cv2.imshow('Green Color Mask', greenMaskMorph)
-    cv2.imshow('Red Color Mask', redMaskMorph)
+    cv2.imshow('Blue Color Mask old', blue_mask_morph)
+    cv2.imshow('Green Color Mask', green_mask_morph)
+    cv2.imshow('Red Color Mask', red_mask_morph)
     
-    n_white_pix = np.sum(redMaskMorph == 255)
-    
-    print(n_white_pix)
+    # n_white_pix = np.sum(redMaskMorph == 255)
+    # print(n_white_pix)
             
+    frame_with_keypoints = cv2.drawKeypoints(comp_result, final_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv2.imshow('Composite Frame', frame_with_keypoints)
 
-    frameWithKeypoints = cv2.drawKeypoints(compResult, finalNumberOfBlobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    cv2.imshow('Composite Frame', frameWithKeypoints)
+def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
+    mask_morph = cv2.morphologyEx(frame_to_be_morphed, morphology_method, kernel)
+    return mask_morph
 
-def colorTrackbars():
-    #Create trackbars for color thresholding
-    #Blue brick
-    cv2.namedWindow('Blue Control', cv2.WINDOW_NORMAL)
-    cv2.createTrackbar('Low Hue', 'Blue Control', blue_lowH, 179, nothing)
-    cv2.createTrackbar('High Hue', 'Blue Control', blue_highH, 179, nothing)
-
-    cv2.createTrackbar('Low Saturation', 'Blue Control', blue_lowS, 255, nothing)
-    cv2.createTrackbar('High Saturation', 'Blue Control', blue_highS, 255, nothing)
-
-    cv2.createTrackbar('Low Intensity', 'Blue Control', blue_lowV, 255, nothing)
-    cv2.createTrackbar('High Intensity', 'Blue Control', blue_highV, 255, nothing)
-
-    #Green brick
-    cv2.namedWindow('Green Control', cv2.WINDOW_NORMAL)
-    cv2.createTrackbar('Low Hue', 'Green Control', green_lowH, 179, nothing)
-    cv2.createTrackbar('High Hue', 'Green Control', green_highH, 179, nothing)
-
-    cv2.createTrackbar('Low Saturation', 'Green Control', green_lowS, 255, nothing)
-    cv2.createTrackbar('High Saturation', 'Green Control', green_highS, 255, nothing)
-
-    cv2.createTrackbar('Low Intensity', 'Green Control', green_lowV, 255, nothing)
-    cv2.createTrackbar('High Intensity', 'Green Control', green_highV, 255, nothing)
-
-    #Red brick
-    cv2.namedWindow('Red Control', cv2.WINDOW_NORMAL)
-    cv2.createTrackbar('Low Hue', 'Red Control', red_lowH, 179, nothing)
-    cv2.createTrackbar('High Hue', 'Red Control', red_highH, 179, nothing)
-
-    cv2.createTrackbar('Low Saturation', 'Red Control', red_lowS, 255, nothing)
-    cv2.createTrackbar('High Saturation', 'Red Control', red_highS, 255, nothing)
-
-    cv2.createTrackbar('Low Intensity', 'Red Control', red_lowV, 255, nothing)
-    cv2.createTrackbar('High Intensity', 'Red Control', red_highV, 255, nothing)
-
-def blobAnalysis(frame, minArea, maxArea, color, typeOfBrick):
+def blob_analysis(frame, min_area, max_area, color, brick_type):
     params = cv2.SimpleBlobDetector_Params()
 
-    # Change thresholds
+    # Change threshold paramters
     params.filterByColor = True
     params.blobColor = 255
 
     params.filterByArea = True
-    params.minArea = minArea
-    params.maxArea = maxArea
+    params.minArea = min_area
+    params.maxArea = max_area
     
-    blobDetector = cv2.SimpleBlobDetector_create(params)
-    keypoints = blobDetector.detect(frame)
-    # frame_with_keypoints = cv2.drawKeypoints(frame, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    blob_detector = cv2.SimpleBlobDetector_create(params)
+    keypoints = blob_detector.detect(frame)
 
     if(len(keypoints) > 0):
-        print('Number of ' + str(color) + ' ' + str(typeOfBrick) + ' Bricks: ' + str(len(keypoints)))
+        print('Number of ' + str(color) + ' ' + str(brick_type) + ' Bricks: ' + str(len(keypoints)))
 
     return keypoints
 
-
-
 def main_loop():
 
-    colorTrackbars()
+    color_trackbars()
+
     while(CameraApi.nRet == ueye.IS_SUCCESS):
 
         # In order to display the image in an OpenCV window we need to...
@@ -211,13 +200,13 @@ def main_loop():
         
     #---------------------------------------------------------------------------------------------------------------------------------------
         #Include image data processing here
-        frame2BGR = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-        HSVFrame = cv2.cvtColor(frame2BGR, cv2.COLOR_BGR2HSV)
-        frameThreshold(frame2BGR, HSVFrame)
+        frame_to_bgr = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+        hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
+        frame_threshold(frame_to_bgr, hsv_frame)
     #---------------------------------------------------------------------------------------------------------------------------------------
 
         #...and finally display it
-        cv2.imshow("TEST", HSVFrame)
+        cv2.imshow("TEST", hsv_frame)
 
         # Press q if you want to end the loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
