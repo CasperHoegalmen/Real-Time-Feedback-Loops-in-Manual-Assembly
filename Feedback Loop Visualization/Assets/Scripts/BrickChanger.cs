@@ -5,29 +5,42 @@ using UnityEngine;
 public class BrickChanger : MonoBehaviour
 {
     public GameObject[] bricks;
-    public Material[] materials;
+
+    [SerializeField] Material opaque;
+    [SerializeField] Material transparent;
+    [SerializeField] Camera camera;
 
     private Renderer[] childMaterials;
 
-    Material opaque, transparent;
+    Color colorOfBrick;
+    CameraMovement cameraMovement;
 
     // Start is called before the first frame update
     void Start()
     {
-        opaque = materials[0];
-        transparent = materials[1];
+        cameraMovement = camera.GetComponent<CameraMovement>();
+    }
 
-        ChangeMaterial(0, "opaque");
+    private void Update()
+    {
+        DoSomething("[1]", 0);
+        DoSomething("[2]", 1);
+        DoSomething("[3]", 2);
+        DoSomething("[4]", 3);
+        DoSomething("[5]", 4);
     }
 
     public void ChangeMaterial(int brickToChange, string material)
     {
+        colorOfBrick = bricks[brickToChange].GetComponent<Renderer>().material.color;
+
         if(material == "transparent")
         {
             childMaterials = bricks[brickToChange].GetComponentsInChildren<MeshRenderer>();
             foreach (Renderer rend in childMaterials)
             {
                 rend.material = transparent;
+                rend.material.color = new Color(colorOfBrick.r, colorOfBrick.g, colorOfBrick.b, transparent.color.a);
             }
         }
         else if(material == "opaque")
@@ -36,8 +49,28 @@ public class BrickChanger : MonoBehaviour
             foreach (Renderer rend in childMaterials)
             {
                 rend.material = opaque;
+                rend.material.color = rend.material.color = new Color(colorOfBrick.r, colorOfBrick.g, colorOfBrick.b, opaque.color.a);
             }
         }
+    }
 
+    public void EnableBrick(int brickToEnable)
+    {
+        if(brickToEnable >= bricks.Length)
+        {
+            brickToEnable -= 1;
+        }
+
+        bricks[brickToEnable].SetActive(true);
+        cameraMovement.target = bricks[brickToEnable].transform;
+    }
+
+    private void DoSomething(string number, int brick)
+    {
+        if (Input.GetKeyDown(number))
+        {
+            EnableBrick(brick + 1);
+            ChangeMaterial(brick, "opaque");
+        }
     }
 }
