@@ -21,10 +21,10 @@ class Connection:
 
             Connection.string_message = message.decode("utf-8")
             
-            errorDetection = Connection.color_feedback + " " + Connection.shape_feedback
-            feedbackToUnity = errorDetection.encode()
+            error_feedback = Connection.color_feedback + " " + Connection.shape_feedback
+            feedbackToUnity = error_feedback.encode()
 
-            #print(errorDetection)
+            #print(error_feedback)
 
             #  In the real world usage, you just need to replace time.sleep() with
             #  whatever work you want python to do.-

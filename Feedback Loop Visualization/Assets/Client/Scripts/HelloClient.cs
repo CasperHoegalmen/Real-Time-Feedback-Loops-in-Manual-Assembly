@@ -15,7 +15,9 @@ public class HelloClient : MonoBehaviour
     bool correctColor = false, correctShape = false;
     bool trigger = true;
     int brick = 0;
-    
+
+    bool wait = true;
+
     private void Start()
     {
         _helloRequester = new HelloRequester();
@@ -39,26 +41,32 @@ public class HelloClient : MonoBehaviour
 
     public void ConditionsCheck()
     {
-        correctColor = false;
-        correctShape = false;
-        if (HelloRequester.errorFeedback[0] == "Correct")
-        {
-            changeSprite.ChangeImage(3, 1);
-            correctColor = true;
-        }
-        else
-        {
-            changeSprite.ChangeImage(3, 0);
-        }
+        //correctColor = false;
+        //correctShape = false;
 
-        if (HelloRequester.errorFeedback[1] == "Correct")
+        if (wait)
         {
-            changeSprite.ChangeImage(1, 1);
-            correctShape = true;
-        }
-        else
-        {
-            changeSprite.ChangeImage(1, 0);
+            if (HelloRequester.errorFeedback[0] == "Correct")
+            {
+                changeSprite.ChangeImage(3, 1);
+                correctColor = true;
+            }
+            else
+            {
+                changeSprite.ChangeImage(3, 0);
+                correctColor = false;
+            }
+
+            if (HelloRequester.errorFeedback[1] == "Correct")
+            {
+                changeSprite.ChangeImage(1, 1);
+                correctShape = true;
+            }
+            else
+            {
+                changeSprite.ChangeImage(1, 0);
+                correctShape = false;
+            }
         }
 
         Debug.Log(correctColor + " " + correctShape);
@@ -67,8 +75,8 @@ public class HelloClient : MonoBehaviour
             if (correctColor && correctShape)
             {
                 trigger = false;
-                correctColor = false;
-                correctShape = false;
+                //correctColor = false;
+                //correctShape = false;
                 StartCoroutine(changeToNextBrick(brick));
                 brick++;
             }
@@ -77,8 +85,10 @@ public class HelloClient : MonoBehaviour
 
     private IEnumerator changeToNextBrick(int brick)
     {
-        yield return new WaitForSeconds(3);
         _helloRequester.stepNumber++;
+        wait = false;
+        yield return new WaitForSeconds(2);
+        wait = true;
         //Debug.Log(_helloRequester.stepNumber);
         brickChanger.ChangeMaterial(brick, "opaque");
         brickChanger.EnableBrick(brick + 1);

@@ -139,8 +139,16 @@ def frame_threshold(frame, hsv_frame):
     green_mask_morph = frame_morph(general_kernel, frame, green_mask, cv2.MORPH_CLOSE)
     red_mask_morph = frame_morph(general_kernel, frame, red_mask, cv2.MORPH_CLOSE)
 
+    n_white_red_color = np.sum(red_mask_morph == 255)
+    n_white_green_color = np.sum(green_mask_morph == 255)  
+    n_white_blue_color = np.sum(blue_mask_morph == 255)
+
+    # print("red color = ", n_white_red_color)
+    # print("green color = ", n_white_green_color)
+    # print("blue color = ", n_white_blue_color)
+
     #Color identification that is used in the error feedback function
-    color_function(red_mask_morph, green_mask_morph, blue_mask_morph)
+    color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
 
     #Composite mask
     blue_red_mask = blue_mask_morph + red_mask_morph
@@ -155,7 +163,7 @@ def frame_threshold(frame, hsv_frame):
     #Error detection feedback
     assembly_step_number = Connection.string_message
     sum_of_correct_shapes = len(blue_blobs_2x4) + len(green_blobs_2x4) + len(red_blobs_2x4)
-    if sum_of_correct_shapes == 1:
+    if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
         current_shape = True
 
     error_feedback(assembly_step_number, current_brick_color, current_shape)
@@ -183,13 +191,16 @@ def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
 def color_function(red, green, blue):
     global current_brick_color
 
-    if np.array(red).any() != 0:
+    #if np.array(red).any() != 0:
+    if red > 500:
         current_brick_color = "Red"
 
-    elif np.array(green).any() != 0:
+    #elif np.array(green).any() != 0:
+    elif green > 500:
         current_brick_color = "Green"
 
-    elif np.array(blue).any() != 0:
+    #elif np.array(blue).any() != 0:
+    elif blue > 500:
         current_brick_color = "Blue"
 
     else: 
@@ -219,8 +230,6 @@ def blob_analysis(frame, min_area, max_area, color, brick_type):
     return keypoints
 
 def error_feedback(step_number, color_to_use, shape_to_use):
-    #print(color_to_use)
-
     integer_step_number = 0
 
     if step_number != "":
@@ -241,7 +250,51 @@ def error_feedback(step_number, color_to_use, shape_to_use):
         else:
             Connection.color_feedback = "Incorrect"
     
-    else:
+    elif integer_step_number == 2:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Blue":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 3:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Red":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 4:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Green":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 5:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Blue":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    else: 
         Connection.shape_feedback = "Incorrect"
         Connection.color_feedback = "Incorrect"
         
