@@ -48,6 +48,13 @@ red_high_val = 255
 # Morphology Kernel
 general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 
+#Current step of assembly process
+currentStep = 0
+
+#Current position
+cX = 0
+cY = 0
+
 def color_trackbars():
     # Create trackbars for color thresholding
     # Blue brick
@@ -85,6 +92,11 @@ def color_trackbars():
 
 def nothing(x):
     pass
+
+def compare_Lists():
+    if lego_model[currentStep].position_x == cX and lego_model[currentStep].position_y == cY:
+        print("True")
+
 
 def frame_threshold(frame, hsv_frame):
 
@@ -229,6 +241,7 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
 
 def main_loop():
 
+    compare_Lists()
     color_trackbars()
 
     while(CameraApi.nRet == ueye.IS_SUCCESS):
