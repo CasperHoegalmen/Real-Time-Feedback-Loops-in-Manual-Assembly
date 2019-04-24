@@ -185,6 +185,9 @@ def position(current_x, current_y, correct_x, correct_y):
     else:
         print("false")
 
+def compare_models():
+
+
 
 def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
     params = cv2.SimpleBlobDetector_Params()
@@ -218,7 +221,6 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
             # draw the contour and center of the shape on the image
             cv2.drawContours(comp_frame, [c], -1, (0, 255, 0), 2)
             cv2.circle(comp_frame, (cX, cY), 7, (255, 255, 255), -1)
-            print("COM-X: " + str(cX) + "    COM-Y: " + str(cY))
             cv2.putText(comp_frame, "center", (cX - 20, cY - 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         
