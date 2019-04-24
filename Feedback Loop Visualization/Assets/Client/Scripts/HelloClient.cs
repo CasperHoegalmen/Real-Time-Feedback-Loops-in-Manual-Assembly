@@ -14,10 +14,9 @@ public class HelloClient : MonoBehaviour
     [SerializeField] BrickChanger brickChanger;
     bool correctColor = false, correctShape = false;
     bool trigger = true;
+    bool run = true;
     int brick = 0;
-
-    bool wait = true;
-
+    
     private void Start()
     {
         _helloRequester = new HelloRequester();
@@ -44,7 +43,7 @@ public class HelloClient : MonoBehaviour
         //correctColor = false;
         //correctShape = false;
 
-        if (wait)
+        if (run)
         {
             if (HelloRequester.errorFeedback[0] == "Correct")
             {
@@ -86,9 +85,9 @@ public class HelloClient : MonoBehaviour
     private IEnumerator changeToNextBrick(int brick)
     {
         _helloRequester.stepNumber++;
-        wait = false;
+        run = false;
         yield return new WaitForSeconds(2);
-        wait = true;
+        run = true;
         //Debug.Log(_helloRequester.stepNumber);
         brickChanger.ChangeMaterial(brick, "opaque");
         brickChanger.EnableBrick(brick + 1);
