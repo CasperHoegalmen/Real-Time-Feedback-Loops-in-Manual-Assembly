@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44971102, g: 0.49978077, b: 0.5756357, a: 1}
+  m_IndirectSpecularColor: {r: 0.44971102, g: 0.49978077, b: 0.57563573, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1126,6 +1126,30 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas
       objectReference: {fileID: 0}
+    - target: {fileID: 1196390081151171206, guid: d19b517e7cad2f64b80df078b00ae2d4,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7579747ca12225a4d98d8f3f68cc0a9b,
+        type: 3}
+    - target: {fileID: 1196390081234649307, guid: d19b517e7cad2f64b80df078b00ae2d4,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7579747ca12225a4d98d8f3f68cc0a9b,
+        type: 3}
+    - target: {fileID: 1196390081247395952, guid: d19b517e7cad2f64b80df078b00ae2d4,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7579747ca12225a4d98d8f3f68cc0a9b,
+        type: 3}
+    - target: {fileID: 1196390082319701203, guid: d19b517e7cad2f64b80df078b00ae2d4,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7579747ca12225a4d98d8f3f68cc0a9b,
+        type: 3}
     - target: {fileID: 1196390080595424023, guid: d19b517e7cad2f64b80df078b00ae2d4,
         type: 3}
       propertyPath: m_LocalPosition.x

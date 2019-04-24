@@ -40,8 +40,11 @@ red_high_val = 255
 general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 
 assembly_step_number = ""
+integer_step_number = 0
 current_brick_color = ""
 current_shape = False
+
+test_shape = False
 
 def color_trackbars():
     # Create trackbars for color thresholding
@@ -84,6 +87,8 @@ def nothing(x):
 def frame_threshold(frame, hsv_frame):
     global assembly_step_number
     global current_shape
+
+    global test_shape
 
     # Get the trackbar position
     # Blue brick
@@ -156,9 +161,15 @@ def frame_threshold(frame, hsv_frame):
     comp_result = cv2.bitwise_and(frame, frame, mask = final_mask)
 
     # Perform Blob Analysis
+    #2x4 bricks
     blue_blobs_2x4 = blob_analysis(blue_mask_morph, 3300, 3600, 'blue', '2x4')
     green_blobs_2x4 = blob_analysis(green_mask_morph, 3300, 3600, 'green', '2x4')
     red_blobs_2x4 = blob_analysis(red_mask_morph, 3300, 3600, 'red', '2x4')
+
+    #2x2 bricks
+    blue_blobs_2x2 = blob_analysis(blue_mask_morph, 3700, 3900, 'blue', '2x2')
+    green_blobs_2x2 = blob_analysis(green_mask_morph, 3700, 3900, 'green', '2x2')
+    red_blobs_2x2 = blob_analysis(red_mask_morph, 3700, 3900, 'red', '2x2')
 
     #Error detection feedback
     assembly_step_number = Connection.string_message
@@ -166,12 +177,20 @@ def frame_threshold(frame, hsv_frame):
     if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
         current_shape = True
 
-    error_feedback(assembly_step_number, current_brick_color, current_shape)
+    test_of_2x2_shapes = len(blue_blobs_2x2) + len(green_blobs_2x2) + len(red_blobs_2x2)
+    if test_of_2x2_shapes > 0 and test_of_2x2_shapes <= 3:
+        current_shape = False
+        test_shape = True
+
+    error_feedback(assembly_step_number, current_brick_color, current_shape, test_shape)
 
     current_shape = False
+    test_shape = False
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
     final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4
+
+    test_number_of_blobs = blue_blobs_2x2 + green_blobs_2x2 + red_blobs_2x2
  
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     cv2.imshow('Blue Color Mask old', blue_mask_morph)
@@ -182,6 +201,9 @@ def frame_threshold(frame, hsv_frame):
     #print(n_white_pix)
             
     frame_with_keypoints = cv2.drawKeypoints(comp_result, final_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+    test_with_keypoints = cv2.drawKeypoints(comp_result, test_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
     cv2.imshow('Composite Frame', frame_with_keypoints)
 
 def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
@@ -229,8 +251,8 @@ def blob_analysis(frame, min_area, max_area, color, brick_type):
 
     return keypoints
 
-def error_feedback(step_number, color_to_use, shape_to_use):
-    integer_step_number = 0
+def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
+    global integer_step_number
 
     if step_number != "":
         integer_step_number = int(step_number)
@@ -290,6 +312,39 @@ def error_feedback(step_number, color_to_use, shape_to_use):
             Connection.shape_feedback = "Incorrect"
 
         if color_to_use == "Blue":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 6:
+        if test_shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Blue":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 7:
+        if test_shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Green":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 8:
+        if test_shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Red":
             Connection.color_feedback = "Correct"
         else:
             Connection.color_feedback = "Incorrect"
