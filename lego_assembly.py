@@ -2,6 +2,17 @@ import numpy as np
 from pyueye import ueye
 from lego_api import CameraApi
 import cv2
+import imutils
+from lego_brick import lego_model
+
+class Contours:
+
+    cnts = []
+
+    @staticmethod
+    def get_contour(frame):
+        Contours.cnts = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        Contours.cnts = imutils.grab_contours(Contours.cnts)
 
 # Variables
 # Threshold values for the blue brick
@@ -76,6 +87,7 @@ def nothing(x):
     pass
 
 def frame_threshold(frame, hsv_frame):
+
     # Get the trackbar position
     # Blue brick
     blue_low_hue = cv2.getTrackbarPos('Low Hue', 'Blue Control')
@@ -120,6 +132,7 @@ def frame_threshold(frame, hsv_frame):
     lower_red = np.array([red_low_hue, red_low_sat, red_low_val])
     upper_red = np.array([red_high_hue, red_high_sat, red_high_val])
 
+    
     #Apply a Gaussian blur that has 11x11 kernel size to the HSV frame 
     hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
 
@@ -137,10 +150,13 @@ def frame_threshold(frame, hsv_frame):
     final_mask = blue_red_mask + green_mask_morph
     comp_result = cv2.bitwise_and(frame, frame, mask = final_mask)
 
+
+    Contours.get_contour(green_mask_morph)
+
     # Perform Blob Analysis
-    blue_blobs_2x4 = blob_analysis(blue_mask_morph, 3300, 3600, 'blue', '2x4')
-    green_blobs_2x4 = blob_analysis(green_mask_morph, 3300, 3600, 'green', '2x4')
-    red_blobs_2x4 = blob_analysis(red_mask_morph, 3300, 3600, 'red', '2x4')
+    blue_blobs_2x4 = blob_analysis(blue_mask_morph, comp_result, 3300, 3600, 'blue', '2x4')
+    green_blobs_2x4 = blob_analysis(green_mask_morph, comp_result, 3300, 3600, 'green', '2x4')
+    red_blobs_2x4 = blob_analysis(red_mask_morph, comp_result, 3300, 3600, 'red', '2x4')
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
     final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4 
@@ -153,15 +169,24 @@ def frame_threshold(frame, hsv_frame):
     
     # n_white_pix = np.sum(redMaskMorph == 255)
     # print(n_white_pix)
-            
+
     frame_with_keypoints = cv2.drawKeypoints(comp_result, final_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     cv2.imshow('Composite Frame', frame_with_keypoints)
+
 
 def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
     mask_morph = cv2.morphologyEx(frame_to_be_morphed, morphology_method, kernel)
     return mask_morph
 
-def blob_analysis(frame, min_area, max_area, color, brick_type):
+
+def position(current_x, current_y, correct_x, correct_y):
+    if current_x < correct_x+5 and current_x > correct_x-5 and current_y < correct_y+5 and current_y > correct_y-5 : 
+        print("true")
+    else:
+        print("false")
+
+
+def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
     params = cv2.SimpleBlobDetector_Params()
 
     # Change threshold paramters
@@ -175,8 +200,30 @@ def blob_analysis(frame, min_area, max_area, color, brick_type):
     blob_detector = cv2.SimpleBlobDetector_create(params)
     keypoints = blob_detector.detect(frame)
 
-    if(len(keypoints) > 0):
-        print('Number of ' + str(color) + ' ' + str(brick_type) + ' Bricks: ' + str(len(keypoints)))
+    # if(len(keypoints) > 0):
+        # print('Number of ' + str(color) + ' ' + str(brick_type) + ' Bricks: ' + str(len(keypoints)))
+
+
+    for c in Contours.cnts:
+        # compute the center of the contour
+        area = cv2.contourArea(c)         
+        if area > min_area and area < max_area:
+            M = cv2.moments(c)
+            if(M["m00"] != 0):
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+
+            position(cX, cY, 325, 254)
+        
+            # draw the contour and center of the shape on the image
+            cv2.drawContours(comp_frame, [c], -1, (0, 255, 0), 2)
+            cv2.circle(comp_frame, (cX, cY), 7, (255, 255, 255), -1)
+            print("COM-X: " + str(cX) + "    COM-Y: " + str(cY))
+            cv2.putText(comp_frame, "center", (cX - 20, cY - 20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+        
+            # show the image
+            cv2.imshow("Image", comp_frame)
 
     return keypoints
 
@@ -201,15 +248,68 @@ def main_loop():
     #---------------------------------------------------------------------------------------------------------------------------------------
         #Include image data processing here
         frame_to_bgr = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-        hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
-        frame_threshold(frame_to_bgr, hsv_frame)
+
+        hsv_frame2 = cv2.GaussianBlur(frame_to_bgr, (11, 11), 0)
+        hsv_frame2 = cv2.cvtColor(hsv_frame2, cv2.COLOR_BGR2HSV)
+
+        # hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
+        # hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
+
+        # b_original, g_original, r_original, a = cv2.split(frame)
+        # b_BGRA2BGR, g_BGRA2BGR, r_BGRA2BGR = cv2.split(frame_to_bgr)
+
+        # h, s, v = cv2.split(hsv_frame)
+        # h_blur, s_blur, v_blur = cv2.split(hsv_frame2)
+
+        # hsv_frame_without_s = cv2.merge((h, v, v))
+
+        # cv2.imshow('HSV', hsv_frame)
+
+        # H = hsv_frame.copy()
+        # H[:, :, 1] = 0
+        # H[:, :, 2] = 0
+        # H = cv2.cvtColor(H, cv2.COLOR_BGR2GRAY)
+        # cv2.imshow('only H', H)
+
+        # S = hsv_frame.copy()
+        # S[:, :, 0] = 0
+        # S[:, :, 2] = 0
+        # S = cv2.cvtColor(S, cv2.COLOR_BGR2GRAY)
+        # cv2.imshow('only S', S)
+
+        # V = hsv_frame.copy()
+        # V[:, :, 0] = 0
+        # V[:, :, 1] = 0
+        # V = cv2.cvtColor(V, cv2.COLOR_BGR2GRAY)
+        # cv2.imshow('only V', V)
+
+        frame_threshold(frame_to_bgr, hsv_frame2)
     #---------------------------------------------------------------------------------------------------------------------------------------
 
         #...and finally display it
-        cv2.imshow("TEST", hsv_frame)
+        
+        # cv2.imshow("HSV TEST", hsv_frame)
 
         # Press q if you want to end the loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            # cv2.imwrite("b_original.png",b_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("g_original.png",g_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("r_original.png",r_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+
+            # cv2.imwrite("b_BGRA2BGR.png",b_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("g_BGRA2BGR.png",g_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("r_BGRA2BGR.png",r_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+
+            # cv2.imwrite("h.png",h, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("s.png",s, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("v.png",v, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+
+            # cv2.imwrite("h_blur.png",h_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("s_blur.png",s_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("v_blur.png",v_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+
+            # cv2.imwrite("HSV_blurred_full.png",hsv_frame2, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+            # cv2.imwrite("RGB_full.png",frame_to_bgr, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
             break
     #---------------------------------------------------------------------------------------------------------------------------------------
 
