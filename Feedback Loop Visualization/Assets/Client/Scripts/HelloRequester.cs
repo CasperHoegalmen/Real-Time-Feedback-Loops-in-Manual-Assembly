@@ -11,6 +11,11 @@ using UnityEngine;
 public class HelloRequester : RunAbleThread
 {
     ///     Stop requesting when Running=false.
+
+    public int stepNumber;
+
+    public static string[] errorFeedback;
+
     protected override void Run()
     {
         ForceDotNet.Force(); 
@@ -24,7 +29,7 @@ public class HelloRequester : RunAbleThread
                 if (Send)
                 {
                     //string message = client.ReceiveFrameString();
-                    client.SendFrame("Hello");
+                    client.SendFrame(stepNumber.ToString());
 
                     string message = null;
                     bool gotMessage = false;
@@ -34,7 +39,15 @@ public class HelloRequester : RunAbleThread
                         gotMessage = client.TryReceiveFrameString(out message); // this returns true if it's successful
                         if (gotMessage) break;
                     }
-                    if (gotMessage) Debug.Log("Received " + message);
+                    if (gotMessage)
+                    {
+                        //Debug.Log("Received " + message);
+
+                        errorFeedback = message.Split(' ');
+
+                        Debug.Log("Color is " + errorFeedback[0]);
+                        Debug.Log("Shape is " + errorFeedback[1]);
+                    }
                 }       
             }
         }
