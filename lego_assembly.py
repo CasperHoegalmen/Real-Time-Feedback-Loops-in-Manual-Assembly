@@ -44,7 +44,7 @@ integer_step_number = 0
 current_brick_color = ""
 current_shape = False
 
-test_shape = False
+second_layer_shape = False
 
 def color_trackbars():
     # Create trackbars for color thresholding
@@ -88,7 +88,7 @@ def frame_threshold(frame, hsv_frame):
     global assembly_step_number
     global current_shape
 
-    global test_shape
+    global second_layer_shape
 
     # Get the trackbar position
     # Blue brick
@@ -177,20 +177,20 @@ def frame_threshold(frame, hsv_frame):
     if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
         current_shape = True
 
-    test_of_2x2_shapes = len(blue_blobs_2x2) + len(green_blobs_2x2) + len(red_blobs_2x2)
-    if test_of_2x2_shapes > 0 and test_of_2x2_shapes <= 3:
+    second_layer_sum_of_shapes = len(blue_blobs_2x2) + len(green_blobs_2x2) + len(red_blobs_2x2)
+    if second_layer_sum_of_shapes > 0 and second_layer_sum_of_shapes <= 3:
         current_shape = False
-        test_shape = True
+        second_layer_shape = True
 
-    error_feedback(assembly_step_number, current_brick_color, current_shape, test_shape)
+    error_feedback(assembly_step_number, current_brick_color, current_shape, second_layer_shape)
 
     current_shape = False
-    test_shape = False
+    second_layer_shape = False
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
     final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4
 
-    test_number_of_blobs = blue_blobs_2x2 + green_blobs_2x2 + red_blobs_2x2
+    second_layer_number_of_blobs = blue_blobs_2x2 + green_blobs_2x2 + red_blobs_2x2
  
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     cv2.imshow('Blue Color Mask old', blue_mask_morph)
@@ -202,7 +202,7 @@ def frame_threshold(frame, hsv_frame):
             
     frame_with_keypoints = cv2.drawKeypoints(comp_result, final_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-    test_with_keypoints = cv2.drawKeypoints(comp_result, test_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    second_layer_frame_with_keypoints = cv2.drawKeypoints(comp_result, second_layer_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
     cv2.imshow('Composite Frame', frame_with_keypoints)
 
@@ -251,7 +251,7 @@ def blob_analysis(frame, min_area, max_area, color, brick_type):
 
     return keypoints
 
-def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
+def error_feedback(step_number, color_to_use, shape_to_use, second_layer_shape_to_use):
     global integer_step_number
 
     if step_number != "":
@@ -317,7 +317,7 @@ def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
             Connection.color_feedback = "Incorrect"
 
     elif integer_step_number == 6:
-        if test_shape_to_use == True:
+        if second_layer_shape_to_use == True:
             Connection.shape_feedback = "Correct"
         else:
             Connection.shape_feedback = "Incorrect"
@@ -328,7 +328,7 @@ def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
             Connection.color_feedback = "Incorrect"
 
     elif integer_step_number == 7:
-        if test_shape_to_use == True:
+        if second_layer_shape_to_use == True:
             Connection.shape_feedback = "Correct"
         else:
             Connection.shape_feedback = "Incorrect"
@@ -339,7 +339,7 @@ def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
             Connection.color_feedback = "Incorrect"
 
     elif integer_step_number == 8:
-        if test_shape_to_use == True:
+        if second_layer_shape_to_use == True:
             Connection.shape_feedback = "Correct"
         else:
             Connection.shape_feedback = "Incorrect"
