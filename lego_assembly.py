@@ -4,15 +4,27 @@ from lego_api import CameraApi
 import cv2
 import imutils
 from lego_brick import lego_model
+from server import Connection
 
 class Contours:
 
     cnts = []
+    cX = 0
+    cY = 0
 
     @staticmethod
-    def get_contour(frame):
+    def update_contours(frame):
         Contours.cnts = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         Contours.cnts = imutils.grab_contours(Contours.cnts)
+
+        for c in Contours.cnts:
+            # compute the center of the contour
+            area = cv2.contourArea(c)         
+            if area > 3300 and area < 3600:
+                M = cv2.moments(c)
+                if(M["m00"] != 0):
+                    Contours.cX = int(M["m10"] / M["m00"])
+                    Contours.cY = int(M["m01"] / M["m00"])
 
 # Variables
 # Threshold values for the blue brick
@@ -47,6 +59,16 @@ red_high_val = 255
 
 # Morphology Kernel
 general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
+
+# Model Counter
+counter = 0
+
+assembly_step_number = ""
+integer_step_number = 0
+current_brick_color = ""
+current_shape = False
+
+test_shape = False
 
 def color_trackbars():
     # Create trackbars for color thresholding
@@ -145,18 +167,27 @@ def frame_threshold(frame, hsv_frame):
     green_mask_morph = frame_morph(general_kernel, frame, green_mask, cv2.MORPH_CLOSE)
     red_mask_morph = frame_morph(general_kernel, frame, red_mask, cv2.MORPH_CLOSE)
 
+    n_white_red_color = np.sum(red_mask_morph == 255)
+    n_white_green_color = np.sum(green_mask_morph == 255)  
+    n_white_blue_color = np.sum(blue_mask_morph == 255)
+
+    #Color identification that is used in the error feedback function
+    color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
+
     #Composite mask
     blue_red_mask = blue_mask_morph + red_mask_morph
     final_mask = blue_red_mask + green_mask_morph
     comp_result = cv2.bitwise_and(frame, frame, mask = final_mask)
+    comp_result_greyscale = blue_mask_morph + red_mask_morph + green_mask_morph
 
-
-    Contours.get_contour(green_mask_morph)
+    Contours.update_contours(comp_result_greyscale)
 
     # Perform Blob Analysis
     blue_blobs_2x4 = blob_analysis(blue_mask_morph, comp_result, 3300, 3600, 'blue', '2x4')
     green_blobs_2x4 = blob_analysis(green_mask_morph, comp_result, 3300, 3600, 'green', '2x4')
     red_blobs_2x4 = blob_analysis(red_mask_morph, comp_result, 3300, 3600, 'red', '2x4')
+
+    compare_models(5)
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
     final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4 
@@ -178,16 +209,35 @@ def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
     mask_morph = cv2.morphologyEx(frame_to_be_morphed, morphology_method, kernel)
     return mask_morph
 
+def color_function(red, green, blue):
+    global current_brick_color
 
-def position(current_x, current_y, correct_x, correct_y):
-    if current_x < correct_x+5 and current_x > correct_x-5 and current_y < correct_y+5 and current_y > correct_y-5 : 
-        print("true")
-    else:
-        print("false")
+    #if np.array(red).any() != 0:
+    if red > 500:
+        current_brick_color = "Red"
 
-def compare_models():
+    #elif np.array(green).any() != 0:
+    elif green > 500:
+        current_brick_color = "Green"
 
+    #elif np.array(blue).any() != 0:
+    elif blue > 500:
+        current_brick_color = "Blue"
 
+    else: 
+        current_brick_color = "No predefined color is detected"
+
+    return current_brick_color
+
+def compare_models(pixelthreshold):
+    global counter
+    
+    print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
+
+    if(Contours.cX < lego_model[counter].position_x + pixelthreshold and Contours.cX > lego_model[counter].position_x - pixelthreshold
+     and Contours.cY < lego_model[counter].position_y + pixelthreshold and Contours.cY > lego_model[counter].position_y - pixelthreshold):
+        print("awesome. Next step!")
+        counter += 1
 
 def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
     params = cv2.SimpleBlobDetector_Params()
@@ -208,26 +258,129 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
 
 
     for c in Contours.cnts:
-        # compute the center of the contour
-        area = cv2.contourArea(c)         
-        if area > min_area and area < max_area:
-            M = cv2.moments(c)
-            if(M["m00"] != 0):
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
+        # # compute the center of the contour
+        # area = cv2.contourArea(c)         
+        # if area > min_area and area < max_area:
+        #     M = cv2.moments(c)
+        #     if(M["m00"] != 0):
+        #         cX = int(M["m10"] / M["m00"])
+        #         cY = int(M["m01"] / M["m00"])
 
-            position(cX, cY, 325, 254)
+        #     position(cX, cY, 325, 254)
         
-            # draw the contour and center of the shape on the image
-            cv2.drawContours(comp_frame, [c], -1, (0, 255, 0), 2)
-            cv2.circle(comp_frame, (cX, cY), 7, (255, 255, 255), -1)
-            cv2.putText(comp_frame, "center", (cX - 20, cY - 20),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-        
-            # show the image
-            cv2.imshow("Image", comp_frame)
+        # draw the contour and center of the shape on the image
+        cv2.drawContours(comp_frame, [c], -1, (0, 255, 0), 2)
+        cv2.circle(comp_frame, (Contours.cX, Contours.cY), 7, (255, 255, 255), -1)
+        cv2.putText(comp_frame, "center", (Contours.cX - 20, Contours.cY - 20),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+    
+        # show the image
+        cv2.imshow("Image", comp_frame)
 
     return keypoints
+
+def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
+    global integer_step_number
+
+    if step_number != "":
+        integer_step_number = int(step_number)
+
+    print("Step number is ", integer_step_number)
+    #print("Color is " + color_to_use)
+    #print("Shape is ", shape_to_use)
+
+    if integer_step_number == 1:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Red":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+    
+    elif integer_step_number == 2:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Blue":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 3:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Red":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 4:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Green":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 5:
+        if shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Blue":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 6:
+        if test_shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Blue":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 7:
+        if test_shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Green":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    elif integer_step_number == 8:
+        if test_shape_to_use == True:
+            Connection.shape_feedback = "Correct"
+        else:
+            Connection.shape_feedback = "Incorrect"
+
+        if color_to_use == "Red":
+            Connection.color_feedback = "Correct"
+        else:
+            Connection.color_feedback = "Incorrect"
+
+    else: 
+        Connection.shape_feedback = "Incorrect"
+        Connection.color_feedback = "Incorrect"
+
 
 def main_loop():
 
