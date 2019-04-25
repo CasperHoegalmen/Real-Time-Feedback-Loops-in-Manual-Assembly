@@ -1,7 +1,7 @@
 class LegoBrick:
     color = ""
     correct_size = True
-    wrong_size = False
+    #wrong_size = False
     correct_position = True
     position_x = 0
     position_y = 0 

@@ -200,6 +200,7 @@ def frame_threshold(frame, hsv_frame):
     if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
         current_shape = lego_model[integer_step_number].correct_size
 
+    #Brick position function
     compare_models(5)
 
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
