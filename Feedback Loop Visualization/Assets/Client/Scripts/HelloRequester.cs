@@ -47,6 +47,7 @@ public class HelloRequester : RunAbleThread
 
                         Debug.Log("Color is " + errorFeedback[0]);
                         Debug.Log("Shape is " + errorFeedback[1]);
+                        Debug.Log("Position is " + errorFeedback[2]);
                     }
                 }       
             }

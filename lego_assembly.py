@@ -1,7 +1,8 @@
 import numpy as np
-from pyueye import ueye
-from lego_api import CameraApi
+#from pyueye import ueye
+#from lego_api import CameraApi
 import cv2
+import threading
 import imutils
 from lego_brick import lego_model
 from server import Connection
@@ -28,47 +29,47 @@ class Contours:
 
 # Variables
 # Threshold values for the blue brick
-blue_low_hue = 70
-blue_high_hue = 135
+blue_low_hue = 105
+blue_high_hue = 126
 
-blue_low_sat = 0
-blue_high_sat = 246
+blue_low_sat = 204
+blue_high_sat = 255
 
-blue_low_val = 0
+blue_low_val = 90
 blue_high_val = 255
 
 # Threshold values for the green brick
-green_low_hue = 35
-green_high_hue = 65
+green_low_hue = 51
+green_high_hue = 88
 
-green_low_sat = 141
-green_high_sat = 211
+green_low_sat = 81
+green_high_sat = 255
 
 green_low_val = 0
-green_high_val = 157
+green_high_val = 255
 
 # Threshold values for the red brick
-red_low_hue = 0
-red_high_hue = 7
+red_low_hue = 173
+red_high_hue = 179
 
-red_low_sat = 0
+red_low_sat = 177
 red_high_sat = 255
 
-red_low_val = 0
+red_low_val = 66
 red_high_val = 255
 
 # Morphology Kernel
 general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 
 # Model Counter
-counter = 0
+#counter = 0
 
 assembly_step_number = ""
 integer_step_number = 0
 current_brick_color = ""
+brick_position = False
 current_shape = False
-
-test_shape = False
+#test_shape = False
 
 def color_trackbars():
     # Create trackbars for color thresholding
@@ -109,6 +110,16 @@ def nothing(x):
     pass
 
 def frame_threshold(frame, hsv_frame):
+    global assembly_step_number
+    global integer_step_number
+    global current_shape
+    global current_brick_color
+    global brick_position
+
+    #Assembly step
+    assembly_step_number = Connection.string_message
+    if assembly_step_number != "":
+        integer_step_number = int(assembly_step_number)
 
     # Get the trackbar position
     # Blue brick
@@ -154,10 +165,6 @@ def frame_threshold(frame, hsv_frame):
     lower_red = np.array([red_low_hue, red_low_sat, red_low_val])
     upper_red = np.array([red_high_hue, red_high_sat, red_high_val])
 
-    
-    #Apply a Gaussian blur that has 11x11 kernel size to the HSV frame 
-    hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
-
     #Threshold the HSV image to create a mask that is the values within the threshold range
     blue_mask = cv2.inRange(hsv_frame, lower_blue, upper_blue)
     green_mask = cv2.inRange(hsv_frame, lower_green, upper_green)
@@ -183,11 +190,22 @@ def frame_threshold(frame, hsv_frame):
     Contours.update_contours(comp_result_greyscale)
 
     # Perform Blob Analysis
+    #2x4 bricks
     blue_blobs_2x4 = blob_analysis(blue_mask_morph, comp_result, 3300, 3600, 'blue', '2x4')
     green_blobs_2x4 = blob_analysis(green_mask_morph, comp_result, 3300, 3600, 'green', '2x4')
     red_blobs_2x4 = blob_analysis(red_mask_morph, comp_result, 3300, 3600, 'red', '2x4')
 
+    #Error detection feedback
+    sum_of_correct_shapes = len(blue_blobs_2x4) + len(green_blobs_2x4) + len(red_blobs_2x4)
+    if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
+        current_shape = lego_model[integer_step_number].correct_size
+
     compare_models(5)
+
+    error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
+
+    current_shape = False
+    brick_position = False
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
     final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4 
@@ -211,16 +229,15 @@ def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
 
 def color_function(red, green, blue):
     global current_brick_color
+   
+    #current_brick_color = lego_model[integer_step_number].color
 
-    #if np.array(red).any() != 0:
     if red > 500:
         current_brick_color = "Red"
 
-    #elif np.array(green).any() != 0:
     elif green > 500:
         current_brick_color = "Green"
 
-    #elif np.array(blue).any() != 0:
     elif blue > 500:
         current_brick_color = "Blue"
 
@@ -230,15 +247,18 @@ def color_function(red, green, blue):
     return current_brick_color
 
 def compare_models(pixelthreshold):
-    global counter
+    #global counter
+    global brick_position
     
-    print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
+    #print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
     
-    if(Contours.cX < lego_model[counter].position_x + pixelthreshold and Contours.cX > lego_model[counter].position_x - pixelthreshold
-     and Contours.cY < lego_model[counter].position_y + pixelthreshold and Contours.cY > lego_model[counter].position_y - pixelthreshold):
+    if(Contours.cX < lego_model[integer_step_number].position_x + pixelthreshold and Contours.cX > lego_model[integer_step_number].position_x - pixelthreshold
+     and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
         print("awesome. Next step!")
-        lego_model[counter].isPositionCorrect = True
-        counter += 1
+        brick_position = lego_model[integer_step_number].correct_position
+        #counter += 1
+
+    return brick_position
 
 def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
     params = cv2.SimpleBlobDetector_Params()
@@ -280,207 +300,103 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
 
     return keypoints
 
-def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
-    global integer_step_number
+def error_feedback(step_number, color_to_use, shape_to_use, position):
 
-    if step_number != "":
-        integer_step_number = int(step_number)
-
-    print("Step number is ", integer_step_number)
-    #print("Color is " + color_to_use)
+    #print("Step number is ", step_number)
+    print("Color is " + color_to_use)
     #print("Shape is ", shape_to_use)
 
-    if integer_step_number == 1:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
+    if position == True:
+        Connection.position_feedback = "Correct"
+    else:
+        Connection.position_feedback = "Incorrect"
 
-        if color_to_use == "Red":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-    
-    elif integer_step_number == 2:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Blue":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 3:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Red":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 4:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Green":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 5:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Blue":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 6:
-        if test_shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Blue":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 7:
-        if test_shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Green":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 8:
-        if test_shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Red":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    else: 
+    if shape_to_use == True:
+        Connection.shape_feedback = "Correct"
+    else:
         Connection.shape_feedback = "Incorrect"
+
+    if color_to_use == lego_model[step_number].color:
+        Connection.color_feedback = "Correct"
+    elif color_to_use == lego_model[step_number].color:
+        Connection.color_feedback = "Correct"
+    elif color_to_use == lego_model[step_number].color:
+        Connection.color_feedback = "Correct"
+    else:
         Connection.color_feedback = "Incorrect"
 
+    if position == False and shape_to_use == False and color_to_use == "No predefined color is detected":
+        Connection.shape_feedback = "Incorrect"
+        Connection.color_feedback = "Incorrect"
+        Connection.position_feedback = "Incorrect"
+
+
+#Temporary
+cap = cv2.VideoCapture(0)
 
 def main_loop():
 
     color_trackbars()
 
-    while(CameraApi.nRet == ueye.IS_SUCCESS):
+    while(cap.isOpened()):
 
         # In order to display the image in an OpenCV window we need to...
         # ...extract the data of our image memory
-        array = ueye.get_data(CameraApi.pcImageMemory, CameraApi.width, CameraApi.height, CameraApi.nBitsPerPixel, CameraApi.pitch, copy=False)
+        #array = ueye.get_data(CameraApi.pcImageMemory, CameraApi.width, CameraApi.height, CameraApi.nBitsPerPixel, CameraApi.pitch, copy=False)
 
         # bytes_per_pixel = int(nBitsPerPixel / 8)
 
         # ...reshape it in an numpy array...
-        frame = np.reshape(array,(CameraApi.height.value, CameraApi.width.value, CameraApi.bytes_per_pixel))
+        #frame = np.reshape(array,(CameraApi.height.value, CameraApi.width.value, CameraApi.bytes_per_pixel))
 
         # ...resize the image by a half
-        frame = cv2.resize(frame,(0,0),fx=0.5, fy=0.5)
+        #frame = cv2.resize(frame,(0,0),fx=0.5, fy=0.5)
         
+        ret, frame = cap.read()
+        frame = cv2.flip(frame, 1)
     #---------------------------------------------------------------------------------------------------------------------------------------
         #Include image data processing here
-        frame_to_bgr = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+        #frame_to_bgr = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
-        hsv_frame2 = cv2.GaussianBlur(frame_to_bgr, (11, 11), 0)
-        hsv_frame2 = cv2.cvtColor(hsv_frame2, cv2.COLOR_BGR2HSV)
 
-        # hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
-        # hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
+        #step = Connection.string_message
 
-        # b_original, g_original, r_original, a = cv2.split(frame)
-        # b_BGRA2BGR, g_BGRA2BGR, r_BGRA2BGR = cv2.split(frame_to_bgr)
+        #Convert camera feed from BGR color space to HSV color space
+        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # h, s, v = cv2.split(hsv_frame)
-        # h_blur, s_blur, v_blur = cv2.split(hsv_frame2)
+        #Apply a Gaussian blur that has 11x11 kernel size to the camera frame 
+        frame = cv2.GaussianBlur(frame, (11, 11), 0)
 
-        # hsv_frame_without_s = cv2.merge((h, v, v))
-
-        # cv2.imshow('HSV', hsv_frame)
-
-        # H = hsv_frame.copy()
-        # H[:, :, 1] = 0
-        # H[:, :, 2] = 0
-        # H = cv2.cvtColor(H, cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('only H', H)
-
-        # S = hsv_frame.copy()
-        # S[:, :, 0] = 0
-        # S[:, :, 2] = 0
-        # S = cv2.cvtColor(S, cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('only S', S)
-
-        # V = hsv_frame.copy()
-        # V[:, :, 0] = 0
-        # V[:, :, 1] = 0
-        # V = cv2.cvtColor(V, cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('only V', V)
-
-        frame_threshold(frame_to_bgr, hsv_frame2)
+        frame_threshold(frame, hsv_frame)
     #---------------------------------------------------------------------------------------------------------------------------------------
 
         #...and finally display it
-        
-        # cv2.imshow("HSV TEST", hsv_frame)
+        cv2.imshow("HSV frame", hsv_frame)
+
+        #print(Connection.string_message)
 
         # Press q if you want to end the loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            # cv2.imwrite("b_original.png",b_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("g_original.png",g_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("r_original.png",r_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("b_BGRA2BGR.png",b_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("g_BGRA2BGR.png",g_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("r_BGRA2BGR.png",r_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("h.png",h, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("s.png",s, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("v.png",v, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("h_blur.png",h_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("s_blur.png",s_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("v_blur.png",v_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("HSV_blurred_full.png",hsv_frame2, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("RGB_full.png",frame_to_bgr, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
             break
     #---------------------------------------------------------------------------------------------------------------------------------------
 
     # Releases an image memory that was allocated using is_AllocImageMem() and removes it from the driver management
-    ueye.is_FreeImageMem(CameraApi.hCam, CameraApi.pcImageMemory, CameraApi.MemID)
+    #ueye.is_FreeImageMem(CameraApi.hCam, CameraApi.pcImageMemory, CameraApi.MemID)
 
     # Disables the hCam camera handle and releases the data structures and memory areas taken up by the uEye camera
-    ueye.is_ExitCamera(CameraApi.hCam)
+    #ueye.is_ExitCamera(CameraApi.hCam)
 
     # Destroys the OpenCv windows
     cv2.destroyAllWindows()
 
     print()
     print("END")
-    
 
-CameraApi.initialize_camera()
-main_loop()
+if __name__ == "__main__":
+    t1 = threading.Thread(target = Connection.server)
+    t2 = threading.Thread(target = main_loop)
+
+    t1.start()
+    t2.start()
+
+#CameraApi.initialize_camera()
