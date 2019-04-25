@@ -71,6 +71,8 @@ brick_position = False
 current_shape = False
 #test_shape = False
 
+aspect_ratio = 0
+
 def color_trackbars():
     # Create trackbars for color thresholding
     # Blue brick
@@ -262,6 +264,7 @@ def compare_models(pixelthreshold):
     return brick_position
 
 def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
+    global aspect_ratio
     params = cv2.SimpleBlobDetector_Params()
 
     # Change threshold paramters
@@ -296,6 +299,14 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
         cv2.putText(comp_frame, "center", (Contours.cX - 20, Contours.cY - 20),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
     
+        x, y, w, h = cv2.boundingRect(c)
+        if w > h:
+            aspect_ratio = float(w)/h
+        else:
+            aspect_ratio = h/float(w)
+
+        print(aspect_ratio)
+
         # show the image
         cv2.imshow("Image", comp_frame)
 
@@ -304,7 +315,7 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
 def error_feedback(step_number, color_to_use, shape_to_use, position):
 
     #print("Step number is ", step_number)
-    print("Color is " + color_to_use)
+    #print("Color is " + color_to_use)
     #print("Shape is ", shape_to_use)
 
     if position == True:
