@@ -319,10 +319,6 @@ def error_feedback(step_number, color_to_use, shape_to_use, position):
 
     if color_to_use == lego_model[step_number].color:
         Connection.color_feedback = "Correct"
-    elif color_to_use == lego_model[step_number].color:
-        Connection.color_feedback = "Correct"
-    elif color_to_use == lego_model[step_number].color:
-        Connection.color_feedback = "Correct"
     else:
         Connection.color_feedback = "Incorrect"
 
