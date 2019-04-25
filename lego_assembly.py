@@ -233,10 +233,11 @@ def compare_models(pixelthreshold):
     global counter
     
     print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
-
+    
     if(Contours.cX < lego_model[counter].position_x + pixelthreshold and Contours.cX > lego_model[counter].position_x - pixelthreshold
      and Contours.cY < lego_model[counter].position_y + pixelthreshold and Contours.cY > lego_model[counter].position_y - pixelthreshold):
         print("awesome. Next step!")
+        lego_model[counter].isPositionCorrect = True
         counter += 1
 
 def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
