@@ -22,7 +22,7 @@ class Connection:
 
             Connection.string_message = message.decode("utf-8")
             
-            error_feedback = Connection.color_feedback + " " + Connection.shape_feedback
+            error_feedback = Connection.color_feedback + " " + Connection.shape_feedback + " " + Connection.position_feedback
             feedbackToUnity = error_feedback.encode()
 
             #print(error_feedback)

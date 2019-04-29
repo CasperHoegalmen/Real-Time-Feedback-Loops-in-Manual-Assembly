@@ -5,6 +5,9 @@ import cv2
 import imutils
 from lego_brick import lego_model
 from server import Connection
+import threading
+import time
+import asyncio
 
 class Contours:
 
@@ -62,13 +65,27 @@ general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
 
 # Model Counter
 counter = 0
+counter_Plus_One = 1
+prev_frame = ""
 
 assembly_step_number = ""
 integer_step_number = 0
 current_brick_color = ""
+brick_position = False
 current_shape = False
+#test_shape = False
 
-test_shape = False
+red_old = np.ndarray(shape=(512, 80))
+red_old.dtype = np.uint8
+red_old[:,:] = 0
+blue_old = np.ndarray(shape=(512, 80))
+blue_old.dtype = np.uint8
+blue_old[:,:] = 0
+green_old = np.ndarray(shape=(512, 80))
+green_old.dtype = np.uint8
+green_old[:,:] = 0
+
+aspect_ratio = 0
 
 def color_trackbars():
     # Create trackbars for color thresholding
@@ -109,6 +126,21 @@ def nothing(x):
     pass
 
 def frame_threshold(frame, hsv_frame):
+    global assembly_step_number
+    global integer_step_number
+    global current_shape
+    global current_brick_color
+    global brick_position
+    global red_old
+    global blue_old
+    global green_old
+
+    #Assembly step
+    assembly_step_number = Connection.string_message
+    if assembly_step_number != "":
+        integer_step_number = int(assembly_step_number)
+
+    print(integer_step_number)
 
     # Get the trackbar position
     # Blue brick
@@ -167,10 +199,23 @@ def frame_threshold(frame, hsv_frame):
     green_mask_morph = frame_morph(general_kernel, frame, green_mask, cv2.MORPH_CLOSE)
     red_mask_morph = frame_morph(general_kernel, frame, red_mask, cv2.MORPH_CLOSE)
 
-    n_white_red_color = np.sum(red_mask_morph == 255)
-    n_white_green_color = np.sum(green_mask_morph == 255)  
-    n_white_blue_color = np.sum(blue_mask_morph == 255)
+    #print(".........................", red_old.dtype)
 
+    #if type(red_old) is not int and type(blue_old) is not int and type(green_old) is not int:
+    red_next_frame = red_mask_morph - red_old
+    blue_next_frame = blue_mask_morph - blue_old
+    green_next_frame = green_mask_morph - green_old
+
+    #print("OLD:   ", np.sum(red_old == 255))
+    #print("NEW:   ", np.sum(red_mask_morph == 255))
+
+
+    n_white_red_color = np.sum(red_next_frame == 255)
+    n_white_green_color = np.sum(green_next_frame == 255)  
+    n_white_blue_color = np.sum(blue_next_frame == 255)
+
+    #print("At step number ", integer_step_number, " red is ", n_white_red_color, " blue is ", n_white_blue_color, " green is ", n_white_green_color)
+    # print(integer_step_number)
     #Color identification that is used in the error feedback function
     color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
 
@@ -183,20 +228,34 @@ def frame_threshold(frame, hsv_frame):
     Contours.update_contours(comp_result_greyscale)
 
     # Perform Blob Analysis
-    blue_blobs_2x4 = blob_analysis(blue_mask_morph, comp_result, 3300, 3600, 'blue', '2x4')
-    green_blobs_2x4 = blob_analysis(green_mask_morph, comp_result, 3300, 3600, 'green', '2x4')
-    red_blobs_2x4 = blob_analysis(red_mask_morph, comp_result, 3300, 3600, 'red', '2x4')
+    blue_blobs_2x4 = blob_analysis(blue_next_frame, comp_result, 3300, 3600, 'blue', '2x4')
+    green_blobs_2x4 = blob_analysis(green_next_frame, comp_result, 3300, 3600, 'green', '2x4')
+    red_blobs_2x4 = blob_analysis(red_next_frame, comp_result, 3300, 3600, 'red', '2x4')
+
+    sum_of_correct_shapes = len(blue_blobs_2x4) + len(green_blobs_2x4) + len(red_blobs_2x4)
+    if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
+        current_shape = lego_model[integer_step_number].correct_size
 
     compare_models(5)
+
+    error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
+
+    if lego_model[integer_step_number].correct_color == True and current_shape == True:
+        frame_thread = threading.Thread(target = save_frames, args = (2, red_mask_morph, green_mask_morph, blue_mask_morph,))
+        frame_thread.start()
+       
+    current_shape = False
+    brick_position = False
+    lego_model[integer_step_number].correct_color = False
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
     final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4 
  
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     # cv2.imshow('Blue Color Mask', blueBlobs2x4)
-    cv2.imshow('Blue Color Mask old', blue_mask_morph)
-    cv2.imshow('Green Color Mask', green_mask_morph)
-    cv2.imshow('Red Color Mask', red_mask_morph)
+    cv2.imshow('Blue Color Mask', blue_next_frame)
+    cv2.imshow('Green Color Mask', green_next_frame)
+    cv2.imshow('Red Color Mask', red_next_frame)
     
     # n_white_pix = np.sum(redMaskMorph == 255)
     # print(n_white_pix)
@@ -230,17 +289,21 @@ def color_function(red, green, blue):
     return current_brick_color
 
 def compare_models(pixelthreshold):
-    global counter
+    #global counter
+    global brick_position
     
-    print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
+    # print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
     
-    if(Contours.cX < lego_model[counter].position_x + pixelthreshold and Contours.cX > lego_model[counter].position_x - pixelthreshold
-     and Contours.cY < lego_model[counter].position_y + pixelthreshold and Contours.cY > lego_model[counter].position_y - pixelthreshold):
+    if(Contours.cX < lego_model[integer_step_number].position_x + pixelthreshold and Contours.cX > lego_model[integer_step_number].position_x - pixelthreshold
+     and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
         print("awesome. Next step!")
-        lego_model[counter].isPositionCorrect = True
-        counter += 1
+        brick_position = lego_model[integer_step_number].correct_position
+        #counter += 1
+
+    return brick_position
 
 def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
+    global aspect_ratio
     params = cv2.SimpleBlobDetector_Params()
 
     # Change threshold paramters
@@ -275,119 +338,66 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
         cv2.putText(comp_frame, "center", (Contours.cX - 20, Contours.cY - 20),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
     
-        # show the image
-        cv2.imshow("Image", comp_frame)
+        x, y, w, h = cv2.boundingRect(c)
+        if w > h:
+            aspect_ratio = float(w)/h
+        else:
+            aspect_ratio = h/float(w)
+
+        #print(aspect_ratio)
 
     return keypoints
 
-def error_feedback(step_number, color_to_use, shape_to_use, test_shape_to_use):
-    global integer_step_number
+def error_feedback(step_number, color_to_use, shape_to_use, position):
 
-    if step_number != "":
-        integer_step_number = int(step_number)
-
-    print("Step number is ", integer_step_number)
+    #print("Step number is ", step_number)
     #print("Color is " + color_to_use)
     #print("Shape is ", shape_to_use)
 
-    if integer_step_number == 1:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
+    if position == True:
+        Connection.position_feedback = "Correct"
+    else:
+        Connection.position_feedback = "Incorrect"
 
-        if color_to_use == "Red":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-    
-    elif integer_step_number == 2:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
+    if shape_to_use == True:
+        Connection.shape_feedback = "Correct"
+    else:
+        Connection.shape_feedback = "Incorrect"
 
-        if color_to_use == "Blue":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
+    if color_to_use == lego_model[step_number].color:
+        Connection.color_feedback = "Correct"
+        lego_model[step_number].correct_color = True
+    else:
+        Connection.color_feedback = "Incorrect"
 
-    elif integer_step_number == 3:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Red":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 4:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Green":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 5:
-        if shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Blue":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 6:
-        if test_shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Blue":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 7:
-        if test_shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Green":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    elif integer_step_number == 8:
-        if test_shape_to_use == True:
-            Connection.shape_feedback = "Correct"
-        else:
-            Connection.shape_feedback = "Incorrect"
-
-        if color_to_use == "Red":
-            Connection.color_feedback = "Correct"
-        else:
-            Connection.color_feedback = "Incorrect"
-
-    else: 
+    if position == False and shape_to_use == False and color_to_use == "No predefined color is detected":
         Connection.shape_feedback = "Incorrect"
         Connection.color_feedback = "Incorrect"
+        Connection.position_feedback = "Incorrect"
+
+def save_frames(delay, red, green, blue):
+    global red_old
+    global blue_old
+    global green_old
+    global integer_step_number
+
+    time.sleep(delay)
+
+    red_old = red
+    blue_old = blue
+    green_old = green
 
 
 def main_loop():
+    global counter_Plus_One
+    global prev_frame
+    #first_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
 
     color_trackbars()
 
     while(CameraApi.nRet == ueye.IS_SUCCESS):
+
+        #gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # In order to display the image in an OpenCV window we need to...
         # ...extract the data of our image memory
@@ -400,8 +410,30 @@ def main_loop():
 
         # ...resize the image by a half
         frame = cv2.resize(frame,(0,0),fx=0.5, fy=0.5)
+
         
-    #---------------------------------------------------------------------------------------------------------------------------------------
+
+
+        # if counter == counter_Plus_One:
+        #    prev_frame = frame
+        #    prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+        #    cv2.imshow("prevFrame", prev_frame)
+        #    counter_Plus_One = counter + 1
+
+        
+        # if counter > 0 :
+        #     difference = cv2.absdiff(prev_frame, gray_frame)
+        #     ret, difference = cv2.threshold(difference, 25, 255, cv2.THRESH_BINARY)
+        #     img[difference == 255] = [0,0,0]
+        #     cv2.imshow("prev_frame", prev_frame)
+        #     cv2.imshow("difference", difference)
+            
+      #  if counter != 0:
+       #     cv2.subtract(frame, prev_frame, frame)
+        
+        
+        
+     #---------------------------------------------------------------------------------------------------------------------------------------
         #Include image data processing here
         frame_to_bgr = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
@@ -483,4 +515,10 @@ def main_loop():
     
 
 CameraApi.initialize_camera()
-main_loop()
+
+if __name__ == "__main__":
+    t1 = threading.Thread(target = Connection.server)
+    t2 = threading.Thread(target = main_loop)
+
+    t1.start()
+    t2.start()
