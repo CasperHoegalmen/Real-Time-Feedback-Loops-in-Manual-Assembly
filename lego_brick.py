@@ -10,16 +10,18 @@ class LegoBrick:
     rotation = 0
 
 brick1 = LegoBrick()
-brick1.position_x = 325
-brick1.position_y = 255
+brick1.position_x = 404
+brick1.position_y = 278
 brick1.color = "Red"
 
 brick2 = LegoBrick()
-brick2.position_x = 370
-brick2.position_y = 255
+brick2.position_x = 471
+brick2.position_y = 257
 brick2.color = "Blue"
 
 brick3 = LegoBrick()
+brick3.position_x = 457
+brick3.position_y = 320
 brick3.color = "Red"
 
 brick4 = LegoBrick()

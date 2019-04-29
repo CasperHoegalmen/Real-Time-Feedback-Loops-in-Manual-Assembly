@@ -61,7 +61,8 @@ red_low_val = 0
 red_high_val = 255
 
 # Morphology Kernel
-general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
+general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10,10))
+
 
 # Model Counter
 counter = 0
@@ -199,16 +200,16 @@ def frame_threshold(frame, hsv_frame):
     green_mask_morph = frame_morph(general_kernel, frame, green_mask, cv2.MORPH_CLOSE)
     red_mask_morph = frame_morph(general_kernel, frame, red_mask, cv2.MORPH_CLOSE)
 
+    blue_mask_morph = cv2.erode(blue_mask_morph, np.ones((10,10),np.uint8), iterations = 1)
+    green_mask_morph = cv2.erode(green_mask_morph, np.ones((10,10),np.uint8), iterations = 1)
+    red_mask_morph = cv2.erode(red_mask_morph, np.ones((10,10),np.uint8), iterations = 1)
+
     #print(".........................", red_old.dtype)
 
     #if type(red_old) is not int and type(blue_old) is not int and type(green_old) is not int:
     red_next_frame = red_mask_morph - red_old
     blue_next_frame = blue_mask_morph - blue_old
     green_next_frame = green_mask_morph - green_old
-
-    #print("OLD:   ", np.sum(red_old == 255))
-    #print("NEW:   ", np.sum(red_mask_morph == 255))
-
 
     n_white_red_color = np.sum(red_next_frame == 255)
     n_white_green_color = np.sum(green_next_frame == 255)  
@@ -228,9 +229,9 @@ def frame_threshold(frame, hsv_frame):
     Contours.update_contours(comp_result_greyscale)
 
     # Perform Blob Analysis
-    blue_blobs_2x4 = blob_analysis(blue_next_frame, comp_result, 3300, 3600, 'blue', '2x4')
-    green_blobs_2x4 = blob_analysis(green_next_frame, comp_result, 3300, 3600, 'green', '2x4')
-    red_blobs_2x4 = blob_analysis(red_next_frame, comp_result, 3300, 3600, 'red', '2x4')
+    blue_blobs_2x4 = blob_analysis(blue_next_frame, comp_result, 2000, 3600, 'blue', '2x4')
+    green_blobs_2x4 = blob_analysis(green_next_frame, comp_result, 2000, 3600, 'green', '2x4')
+    red_blobs_2x4 = blob_analysis(red_next_frame, comp_result, 2000, 3600, 'red', '2x4')
 
     sum_of_correct_shapes = len(blue_blobs_2x4) + len(green_blobs_2x4) + len(red_blobs_2x4)
     if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
@@ -292,7 +293,7 @@ def compare_models(pixelthreshold):
     #global counter
     global brick_position
     
-    # print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
+    print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
     
     if(Contours.cX < lego_model[integer_step_number].position_x + pixelthreshold and Contours.cX > lego_model[integer_step_number].position_x - pixelthreshold
      and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
@@ -383,9 +384,16 @@ def save_frames(delay, red, green, blue):
 
     time.sleep(delay)
 
+    dilation_kernel = np.ones((3,3),np.uint8)
+
     red_old = red
     blue_old = blue
     green_old = green
+
+    red_old = cv2.dilate(red_old,dilation_kernel,iterations = 1)
+    blue_old = cv2.dilate(blue_old,dilation_kernel,iterations = 1)
+    green_old = cv2.dilate(green_old,dilation_kernel,iterations = 1)
+    
 
 
 def main_loop():
