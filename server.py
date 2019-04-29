@@ -25,8 +25,6 @@ class Connection:
             error_feedback = Connection.color_feedback + " " + Connection.shape_feedback + " " + Connection.position_feedback
             feedbackToUnity = error_feedback.encode()
 
-            #print(error_feedback)
-
             #  In the real world usage, you just need to replace time.sleep() with
             #  whatever work you want python to do.-
             #time.sleep(1)

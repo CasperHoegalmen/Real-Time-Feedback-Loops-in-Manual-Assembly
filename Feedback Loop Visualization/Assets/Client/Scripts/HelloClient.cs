@@ -12,7 +12,7 @@ public class HelloClient : MonoBehaviour
     //[SerializeField] BrickChanger brick;
     [SerializeField] ImageChanger changeSprite;
     [SerializeField] BrickChanger brickChanger;
-    bool correctColor = false, correctShape = false;
+    bool correctColor = false, correctShape = false, correctPosition = false;
     bool trigger = true;
     bool run = true;
     int brick = 0;
@@ -66,12 +66,23 @@ public class HelloClient : MonoBehaviour
                 changeSprite.ChangeImage(1, 0);
                 correctShape = false;
             }
+
+            if (HelloRequester.errorFeedback[2] == "Correct")
+            {
+                changeSprite.ChangeImage(0, 1);
+                correctPosition = true;
+            }
+            else
+            {
+                changeSprite.ChangeImage(0, 0);
+                correctPosition = false;
+            }
         }
 
-        Debug.Log(correctColor + " " + correctShape);
+        Debug.Log(correctColor + " " + correctShape + " " + correctPosition);
         if (trigger)
         {
-            if (correctColor && correctShape)
+            if (correctColor && correctShape && correctPosition)
             {
                 trigger = false;
                 //correctColor = false;

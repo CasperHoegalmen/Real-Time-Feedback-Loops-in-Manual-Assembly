@@ -1,16 +1,15 @@
 import numpy as np
-from pyueye import ueye
-from lego_api import CameraApi
 import cv2
 import imutils
-from lego_brick import lego_model
-from server import Connection
 import threading
 import time
-import asyncio
+from pyueye import ueye
+from lego_api import CameraApi
+from lego_brick import lego_model
+from server import Connection
+#import asyncio
 
 class Contours:
-
     cnts = []
     cX = 0
     cY = 0
@@ -60,20 +59,13 @@ red_high_sat = 255
 red_low_val = 0
 red_high_val = 255
 
-# Morphology Kernel
-general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10,10))
-
-
-# Model Counter
-counter = 0
-counter_Plus_One = 1
-prev_frame = ""
-
+#Feedback loop related variables
 assembly_step_number = ""
 integer_step_number = 0
 current_brick_color = ""
 brick_position = False
 current_shape = False
+aspect_ratio = 0
 
 #Previous frame
 red_old = np.ndarray(shape=(512, 80))
@@ -86,7 +78,8 @@ green_old = np.ndarray(shape=(512, 80))
 green_old.dtype = np.uint8
 green_old[:,:] = 0
 
-aspect_ratio = 0
+# Morphology Kernel
+general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10,10))
 
 def color_trackbars():
     # Create trackbars for color thresholding
@@ -141,8 +134,6 @@ def frame_threshold(frame, hsv_frame):
     if assembly_step_number != "":
         integer_step_number = int(assembly_step_number)
 
-    print(integer_step_number)
-
     # Get the trackbar position
     # Blue brick
     blue_low_hue = cv2.getTrackbarPos('Low Hue', 'Blue Control')
@@ -187,10 +178,6 @@ def frame_threshold(frame, hsv_frame):
     lower_red = np.array([red_low_hue, red_low_sat, red_low_val])
     upper_red = np.array([red_high_hue, red_high_sat, red_high_val])
 
-    
-    #Apply a Gaussian blur that has 11x11 kernel size to the HSV frame 
-    hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
-
     #Threshold the HSV image to create a mask that is the values within the threshold range
     blue_mask = cv2.inRange(hsv_frame, lower_blue, upper_blue)
     green_mask = cv2.inRange(hsv_frame, lower_green, upper_green)
@@ -200,13 +187,11 @@ def frame_threshold(frame, hsv_frame):
     green_mask_morph = frame_morph(general_kernel, frame, green_mask, cv2.MORPH_CLOSE)
     red_mask_morph = frame_morph(general_kernel, frame, red_mask, cv2.MORPH_CLOSE)
 
-    blue_mask_morph = cv2.erode(blue_mask_morph, np.ones((10,10),np.uint8), iterations = 1)
-    green_mask_morph = cv2.erode(green_mask_morph, np.ones((10,10),np.uint8), iterations = 1)
-    red_mask_morph = cv2.erode(red_mask_morph, np.ones((10,10),np.uint8), iterations = 1)
-
-    #print(".........................", red_old.dtype)
-
-    #if type(red_old) is not int and type(blue_old) is not int and type(green_old) is not int:
+    blue_mask_morph = cv2.erode(blue_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
+    green_mask_morph = cv2.erode(green_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
+    red_mask_morph = cv2.erode(red_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
+    
+    #Background subtraction of the individual channels
     red_next_frame = red_mask_morph - red_old
     blue_next_frame = blue_mask_morph - blue_old
     green_next_frame = green_mask_morph - green_old
@@ -215,8 +200,6 @@ def frame_threshold(frame, hsv_frame):
     n_white_green_color = np.sum(green_next_frame == 255)  
     n_white_blue_color = np.sum(blue_next_frame == 255)
 
-    #print("At step number ", integer_step_number, " red is ", n_white_red_color, " blue is ", n_white_blue_color, " green is ", n_white_green_color)
-    # print(integer_step_number)
     #Color identification that is used in the error feedback function
     color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
 
@@ -258,9 +241,6 @@ def frame_threshold(frame, hsv_frame):
     cv2.imshow('Green Color Mask', green_next_frame)
     cv2.imshow('Red Color Mask', red_next_frame)
     
-    # n_white_pix = np.sum(redMaskMorph == 255)
-    # print(n_white_pix)
-
     frame_with_keypoints = cv2.drawKeypoints(comp_result, final_number_of_blobs, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     cv2.imshow('Composite Frame', frame_with_keypoints)
 
@@ -272,15 +252,12 @@ def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
 def color_function(red, green, blue):
     global current_brick_color
 
-    #if np.array(red).any() != 0:
     if red > 500:
         current_brick_color = "Red"
 
-    #elif np.array(green).any() != 0:
     elif green > 500:
         current_brick_color = "Green"
 
-    #elif np.array(blue).any() != 0:
     elif blue > 500:
         current_brick_color = "Blue"
 
@@ -290,7 +267,6 @@ def color_function(red, green, blue):
     return current_brick_color
 
 def compare_models(pixelthreshold):
-    #global counter
     global brick_position
     
     print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
@@ -299,7 +275,6 @@ def compare_models(pixelthreshold):
      and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
         print("awesome. Next step!")
         brick_position = lego_model[integer_step_number].correct_position
-        #counter += 1
 
     return brick_position
 
@@ -320,7 +295,6 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
 
     # if(len(keypoints) > 0):
         # print('Number of ' + str(color) + ' ' + str(brick_type) + ' Bricks: ' + str(len(keypoints)))
-
 
     for c in Contours.cnts:
         # # compute the center of the contour
@@ -380,25 +354,22 @@ def save_frames(delay, red, green, blue):
     global red_old
     global blue_old
     global green_old
-    global integer_step_number
 
     time.sleep(delay)
 
-    dilation_kernel = np.ones((3,3),np.uint8)
+    dilation_kernel = np.ones((3,3), np.uint8)
 
     red_old = red
     blue_old = blue
     green_old = green
 
-    red_old = cv2.dilate(red_old,dilation_kernel,iterations = 1)
-    blue_old = cv2.dilate(blue_old,dilation_kernel,iterations = 1)
-    green_old = cv2.dilate(green_old,dilation_kernel,iterations = 1)
+    red_old = cv2.dilate(red_old, dilation_kernel, iterations = 1)
+    blue_old = cv2.dilate(blue_old, dilation_kernel, iterations = 1)
+    green_old = cv2.dilate(green_old, dilation_kernel, iterations = 1)
     
 
 
 def main_loop():
-    global counter_Plus_One
-    global prev_frame
     #first_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
 
     color_trackbars()
@@ -417,7 +388,7 @@ def main_loop():
         frame = np.reshape(array,(CameraApi.height.value, CameraApi.width.value, CameraApi.bytes_per_pixel))
 
         # ...resize the image by a half
-        frame = cv2.resize(frame,(0,0),fx=0.5, fy=0.5)
+        frame = cv2.resize(frame,(0,0), fx=0.5, fy=0.5)
 
         
 
@@ -442,11 +413,16 @@ def main_loop():
         
         
      #---------------------------------------------------------------------------------------------------------------------------------------
-        #Include image data processing here
+        #Convert camera feed from BGRA to BGR
         frame_to_bgr = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
-        hsv_frame2 = cv2.GaussianBlur(frame_to_bgr, (11, 11), 0)
-        hsv_frame2 = cv2.cvtColor(hsv_frame2, cv2.COLOR_BGR2HSV)
+        #Apply a Gaussian blur that has 11x11 kernel size to the BGR frame
+        frame_to_bgr = cv2.GaussianBlur(frame_to_bgr, (11, 11), 0)
+        
+        #Convert camera feed from BGR color space to HSV color space
+        hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
+
+        frame_threshold(frame_to_bgr, hsv_frame)
 
         # hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
         # hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
@@ -479,7 +455,7 @@ def main_loop():
         # V = cv2.cvtColor(V, cv2.COLOR_BGR2GRAY)
         # cv2.imshow('only V', V)
 
-        frame_threshold(frame_to_bgr, hsv_frame2)
+        
     #---------------------------------------------------------------------------------------------------------------------------------------
 
         #...and finally display it
