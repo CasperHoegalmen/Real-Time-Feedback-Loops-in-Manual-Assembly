@@ -73,8 +73,8 @@ integer_step_number = 0
 current_brick_color = ""
 brick_position = False
 current_shape = False
-#test_shape = False
 
+#Previous frame
 red_old = np.ndarray(shape=(512, 80))
 red_old.dtype = np.uint8
 red_old[:,:] = 0
