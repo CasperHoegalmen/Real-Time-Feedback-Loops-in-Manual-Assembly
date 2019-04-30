@@ -22,7 +22,7 @@ class Contours:
         for c in Contours.cnts:
             # compute the center of the contour
             area = cv2.contourArea(c)         
-            if area > 3300 and area < 3600:
+            if area > 2000 and area < 3600:
                 M = cv2.moments(c)
                 if(M["m00"] != 0):
                     Contours.cX = int(M["m10"] / M["m00"])
@@ -224,7 +224,7 @@ def frame_threshold(frame, hsv_frame):
 
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
 
-    if lego_model[integer_step_number].correct_color == True and current_shape == True:
+    if lego_model[integer_step_number].correct_color == True and current_shape == True and brick_position == True:
         frame_thread = threading.Thread(target = save_frames, args = (2, red_mask_morph, green_mask_morph, blue_mask_morph,))
         frame_thread.start()
        
@@ -270,6 +270,7 @@ def check_position(pixelthreshold):
     global brick_position
     
     print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
+    print("Step Number: ", integer_step_number)
     
     if(Contours.cX < lego_model[integer_step_number].position_x + pixelthreshold and Contours.cX > lego_model[integer_step_number].position_x - pixelthreshold
      and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
