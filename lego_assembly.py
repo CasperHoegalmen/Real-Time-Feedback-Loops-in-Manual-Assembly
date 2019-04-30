@@ -15,14 +15,14 @@ class Contours:
     cY = 0
 
     @staticmethod
-    def update_contours(frame):
+    def update_contours(frame, min_area, max_area):
         Contours.cnts = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         Contours.cnts = imutils.grab_contours(Contours.cnts)
 
         for c in Contours.cnts:
             # compute the center of the contour
             area = cv2.contourArea(c)         
-            if area > 2000 and area < 3600:
+            if area > min_area and area < max_area:
                 M = cv2.moments(c)
                 if(M["m00"] != 0):
                     Contours.cX = int(M["m10"] / M["m00"])
@@ -187,9 +187,9 @@ def frame_threshold(frame, hsv_frame):
     green_mask_morph = frame_morph(general_kernel, frame, green_mask, cv2.MORPH_CLOSE)
     red_mask_morph = frame_morph(general_kernel, frame, red_mask, cv2.MORPH_CLOSE)
 
-    blue_mask_morph = cv2.erode(blue_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
-    green_mask_morph = cv2.erode(green_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
-    red_mask_morph = cv2.erode(red_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
+    # blue_mask_morph = cv2.erode(blue_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
+    # green_mask_morph = cv2.erode(green_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
+    # red_mask_morph = cv2.erode(red_mask_morph, np.ones((10,10), np.uint8), iterations = 1)
     
     #Background subtraction of the individual channels
     red_next_frame = red_mask_morph - red_old
@@ -200,6 +200,10 @@ def frame_threshold(frame, hsv_frame):
     n_white_green_color = np.sum(green_next_frame == 255)  
     n_white_blue_color = np.sum(blue_next_frame == 255)
 
+    print("RED:   ", np.sum(red_next_frame == 255))
+    print("GREEN: ", np.sum(green_next_frame == 255))
+    print("BLUE:  ", np.sum(blue_next_frame == 255))
+
     #Color identification that is used in the error feedback function
     color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
 
@@ -207,20 +211,20 @@ def frame_threshold(frame, hsv_frame):
     blue_red_mask = blue_mask_morph + red_mask_morph
     final_mask = blue_red_mask + green_mask_morph
     comp_result = cv2.bitwise_and(frame, frame, mask = final_mask)
-    comp_result_greyscale = blue_mask_morph + red_mask_morph + green_mask_morph
+    comp_result_greyscale = blue_next_frame + red_next_frame + green_next_frame
 
-    Contours.update_contours(comp_result_greyscale)
+    Contours.update_contours(comp_result_greyscale, lego_model[integer_step_number].min_area, lego_model[integer_step_number].max_area)
 
     # Perform Blob Analysis
-    blue_blobs_2x4 = blob_analysis(blue_next_frame, comp_result, 2000, 3600, 'blue', '2x4')
-    green_blobs_2x4 = blob_analysis(green_next_frame, comp_result, 2000, 3600, 'green', '2x4')
-    red_blobs_2x4 = blob_analysis(red_next_frame, comp_result, 2000, 3600, 'red', '2x4')
+    blue_blobs = blob_analysis(blue_next_frame, comp_result, lego_model[integer_step_number].min_area, lego_model[integer_step_number].max_area)
+    green_blobs = blob_analysis(green_next_frame, comp_result, lego_model[integer_step_number].min_area, lego_model[integer_step_number].max_area)
+    red_blobs = blob_analysis(red_next_frame, comp_result, lego_model[integer_step_number].min_area, lego_model[integer_step_number].max_area)
 
-    sum_of_correct_shapes = len(blue_blobs_2x4) + len(green_blobs_2x4) + len(red_blobs_2x4)
-    if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
+    sum_of_correct_shapes = len(blue_blobs) + len(green_blobs) + len(red_blobs)
+    if sum_of_correct_shapes == 1:
         current_shape = lego_model[integer_step_number].correct_size
 
-    check_position(5)
+    check_position(10)
 
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
 
@@ -233,7 +237,7 @@ def frame_threshold(frame, hsv_frame):
     lego_model[integer_step_number].correct_color = False
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
-    final_number_of_blobs = blue_blobs_2x4 + green_blobs_2x4 + red_blobs_2x4 
+    final_number_of_blobs = blue_blobs + green_blobs + red_blobs 
  
     #Show... Change the second argument to the blue/green/redResultMorph variables to show the result with morphology
     # cv2.imshow('Blue Color Mask', blueBlobs2x4)
@@ -270,7 +274,6 @@ def check_position(pixelthreshold):
     global brick_position
     
     print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
-    print("Step Number: ", integer_step_number)
     
     if(Contours.cX < lego_model[integer_step_number].position_x + pixelthreshold and Contours.cX > lego_model[integer_step_number].position_x - pixelthreshold
      and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
@@ -279,7 +282,7 @@ def check_position(pixelthreshold):
 
     return brick_position
 
-def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
+def blob_analysis(frame, comp_frame, min_area, max_area):
     global aspect_ratio
     params = cv2.SimpleBlobDetector_Params()
 
@@ -290,6 +293,12 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
     params.filterByArea = True
     params.minArea = min_area
     params.maxArea = max_area
+
+    params.filterByCircularity = False
+
+    params.filterByConvexity = False
+
+    params.filterByInertia = False
     
     blob_detector = cv2.SimpleBlobDetector_create(params)
     keypoints = blob_detector.detect(frame)
@@ -307,7 +316,7 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
             aspect_ratio = h/float(w)
 
         #print(aspect_ratio)
-
+    # print("KEYPOIINTS: ", len(keypoints))
     return keypoints
 
 def error_feedback(step_number, color_to_use, shape_to_use, position):
@@ -342,9 +351,13 @@ def save_frames(delay, red, green, blue):
     global blue_old
     global green_old
 
+    Contours.cnts.clear()
+
     time.sleep(delay)
 
     dilation_kernel = np.ones((3,3), np.uint8)
+
+    Contours.cnts.clear()
 
     red_old = red
     blue_old = blue
