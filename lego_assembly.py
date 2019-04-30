@@ -220,7 +220,7 @@ def frame_threshold(frame, hsv_frame):
     if sum_of_correct_shapes > 0 and sum_of_correct_shapes <= 5:
         current_shape = lego_model[integer_step_number].correct_size
 
-    compare_models(5)
+    check_position(5)
 
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
 
@@ -266,7 +266,7 @@ def color_function(red, green, blue):
 
     return current_brick_color
 
-def compare_models(pixelthreshold):
+def check_position(pixelthreshold):
     global brick_position
     
     print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
@@ -293,21 +293,7 @@ def blob_analysis(frame, comp_frame, min_area, max_area, color, brick_type):
     blob_detector = cv2.SimpleBlobDetector_create(params)
     keypoints = blob_detector.detect(frame)
 
-    # if(len(keypoints) > 0):
-        # print('Number of ' + str(color) + ' ' + str(brick_type) + ' Bricks: ' + str(len(keypoints)))
-
     for c in Contours.cnts:
-        # # compute the center of the contour
-        # area = cv2.contourArea(c)         
-        # if area > min_area and area < max_area:
-        #     M = cv2.moments(c)
-        #     if(M["m00"] != 0):
-        #         cX = int(M["m10"] / M["m00"])
-        #         cY = int(M["m01"] / M["m00"])
-
-        #     position(cX, cY, 325, 254)
-        
-        # draw the contour and center of the shape on the image
         cv2.drawContours(comp_frame, [c], -1, (0, 255, 0), 2)
         cv2.circle(comp_frame, (Contours.cX, Contours.cY), 7, (255, 255, 255), -1)
         cv2.putText(comp_frame, "center", (Contours.cX - 20, Contours.cY - 20),
@@ -370,47 +356,20 @@ def save_frames(delay, red, green, blue):
 
 
 def main_loop():
-    #first_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-
     color_trackbars()
 
     while(CameraApi.nRet == ueye.IS_SUCCESS):
 
-        #gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
         # In order to display the image in an OpenCV window we need to...
         # ...extract the data of our image memory
         array = ueye.get_data(CameraApi.pcImageMemory, CameraApi.width, CameraApi.height, CameraApi.nBitsPerPixel, CameraApi.pitch, copy=False)
-
-        # bytes_per_pixel = int(nBitsPerPixel / 8)
 
         # ...reshape it in an numpy array...
         frame = np.reshape(array,(CameraApi.height.value, CameraApi.width.value, CameraApi.bytes_per_pixel))
 
         # ...resize the image by a half
         frame = cv2.resize(frame,(0,0), fx=0.5, fy=0.5)
-
-        
-
-
-        # if counter == counter_Plus_One:
-        #    prev_frame = frame
-        #    prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-        #    cv2.imshow("prevFrame", prev_frame)
-        #    counter_Plus_One = counter + 1
-
-        
-        # if counter > 0 :
-        #     difference = cv2.absdiff(prev_frame, gray_frame)
-        #     ret, difference = cv2.threshold(difference, 25, 255, cv2.THRESH_BINARY)
-        #     img[difference == 255] = [0,0,0]
-        #     cv2.imshow("prev_frame", prev_frame)
-        #     cv2.imshow("difference", difference)
-            
-      #  if counter != 0:
-       #     cv2.subtract(frame, prev_frame, frame)
-        
-        
+  
         
      #---------------------------------------------------------------------------------------------------------------------------------------
         #Convert camera feed from BGRA to BGR
@@ -423,65 +382,11 @@ def main_loop():
         hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
 
         frame_threshold(frame_to_bgr, hsv_frame)
-
-        # hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
-        # hsv_frame = cv2.GaussianBlur(hsv_frame, (11, 11), 0)
-
-        # b_original, g_original, r_original, a = cv2.split(frame)
-        # b_BGRA2BGR, g_BGRA2BGR, r_BGRA2BGR = cv2.split(frame_to_bgr)
-
-        # h, s, v = cv2.split(hsv_frame)
-        # h_blur, s_blur, v_blur = cv2.split(hsv_frame2)
-
-        # hsv_frame_without_s = cv2.merge((h, v, v))
-
-        # cv2.imshow('HSV', hsv_frame)
-
-        # H = hsv_frame.copy()
-        # H[:, :, 1] = 0
-        # H[:, :, 2] = 0
-        # H = cv2.cvtColor(H, cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('only H', H)
-
-        # S = hsv_frame.copy()
-        # S[:, :, 0] = 0
-        # S[:, :, 2] = 0
-        # S = cv2.cvtColor(S, cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('only S', S)
-
-        # V = hsv_frame.copy()
-        # V[:, :, 0] = 0
-        # V[:, :, 1] = 0
-        # V = cv2.cvtColor(V, cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('only V', V)
-
-        
+       
     #---------------------------------------------------------------------------------------------------------------------------------------
-
-        #...and finally display it
-        
-        # cv2.imshow("HSV TEST", hsv_frame)
 
         # Press q if you want to end the loop
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            # cv2.imwrite("b_original.png",b_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("g_original.png",g_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("r_original.png",r_original, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("b_BGRA2BGR.png",b_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("g_BGRA2BGR.png",g_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("r_BGRA2BGR.png",r_BGRA2BGR, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("h.png",h, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("s.png",s, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("v.png",v, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("h_blur.png",h_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("s_blur.png",s_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("v_blur.png",v_blur, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-
-            # cv2.imwrite("HSV_blurred_full.png",hsv_frame2, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
-            # cv2.imwrite("RGB_full.png",frame_to_bgr, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
             break
     #---------------------------------------------------------------------------------------------------------------------------------------
 
