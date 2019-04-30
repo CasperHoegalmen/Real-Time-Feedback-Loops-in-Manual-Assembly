@@ -22,7 +22,7 @@ public class HelloClient : MonoBehaviour
         _helloRequester = new HelloRequester();
         //brick.GetComponent<BrickChanger>();
         _helloRequester.Start();
-        _helloRequester.stepNumber = 1;
+        _helloRequester.stepNumber = 0;
     }
 
     void Update()
