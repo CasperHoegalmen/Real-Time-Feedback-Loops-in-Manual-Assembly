@@ -53,7 +53,7 @@ green_high_val = 157
 red_low_hue = 0
 red_high_hue = 7
 
-red_low_sat = 0
+red_low_sat = 77
 red_high_sat = 255
 
 red_low_val = 0
@@ -200,9 +200,9 @@ def frame_threshold(frame, hsv_frame):
     n_white_green_color = np.sum(green_next_frame == 255)  
     n_white_blue_color = np.sum(blue_next_frame == 255)
 
-    print("RED:   ", np.sum(red_next_frame == 255))
-    print("GREEN: ", np.sum(green_next_frame == 255))
-    print("BLUE:  ", np.sum(blue_next_frame == 255))
+    # print("RED:   ", np.sum(red_next_frame == 255))
+    # print("GREEN: ", np.sum(green_next_frame == 255))
+    # print("BLUE:  ", np.sum(blue_next_frame == 255))
 
     #Color identification that is used in the error feedback function
     color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
@@ -224,12 +224,17 @@ def frame_threshold(frame, hsv_frame):
     if sum_of_correct_shapes == 1:
         current_shape = lego_model[integer_step_number].correct_size
 
-    check_position(10)
+    check_position(red_next_frame, green_next_frame, blue_next_frame)
+
+    # for c in Contours.cnts:
+    #     x, y, w, h = cv2.boundingRect(c)
+    #     print("POINT: ", x, ", ", y)
+    #     print("WIDTH: ", w, "    HEIGHT: ", h)
 
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
 
     if lego_model[integer_step_number].correct_color == True and current_shape == True and brick_position == True:
-        frame_thread = threading.Thread(target = save_frames, args = (2, red_mask_morph, green_mask_morph, blue_mask_morph,))
+        frame_thread = threading.Thread(target = save_frames, args = (3, red_mask_morph, green_mask_morph, blue_mask_morph,))
         frame_thread.start()
        
     current_shape = False
@@ -270,14 +275,35 @@ def color_function(red, green, blue):
 
     return current_brick_color
 
-def check_position(pixelthreshold):
+# def check_position(pixelthreshold):
+#     global brick_position
+    
+#     print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
+    
+#     if(Contours.cX < lego_model[integer_step_number].position_x + pixelthreshold and Contours.cX > lego_model[integer_step_number].position_x - pixelthreshold
+#      and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
+#         print("awesome. Next step!")
+#         brick_position = lego_model[integer_step_number].correct_position
+
+#     return brick_position
+
+def check_position(red, green, blue):
     global brick_position
-    
-    print("cX: " + str(Contours.cX) + "    cY: " + str(Contours.cY))
-    
-    if(Contours.cX < lego_model[integer_step_number].position_x + pixelthreshold and Contours.cX > lego_model[integer_step_number].position_x - pixelthreshold
-     and Contours.cY < lego_model[integer_step_number].position_y + pixelthreshold and Contours.cY > lego_model[integer_step_number].position_y - pixelthreshold):
-        print("awesome. Next step!")
+
+    offset = 10
+    red = red[lego_model[integer_step_number].y - offset: lego_model[integer_step_number].h + offset, lego_model[integer_step_number].x - offset: lego_model[integer_step_number].w + offset]
+    green = green[lego_model[integer_step_number].y - offset: lego_model[integer_step_number].h + offset, lego_model[integer_step_number].x - offset: lego_model[integer_step_number].w + offset]
+    blue = blue[lego_model[integer_step_number].y - offset: lego_model[integer_step_number].h + offset, lego_model[integer_step_number].x - offset: lego_model[integer_step_number].w + offset]
+
+    red_white_pixels = np.sum(red == 255)
+    green_white_pixels = np.sum(green == 255)
+    blue_white_pixels = np.sum(blue == 255)
+
+    if lego_model[integer_step_number].min_area < red_white_pixels and lego_model[integer_step_number].max_area > red_white_pixels:
+        brick_position = lego_model[integer_step_number].correct_position
+    elif lego_model[integer_step_number].min_area < green_white_pixels and lego_model[integer_step_number].max_area > green_white_pixels:
+        brick_position = lego_model[integer_step_number].correct_position
+    elif lego_model[integer_step_number].min_area < blue_white_pixels and lego_model[integer_step_number].max_area > blue_white_pixels:
         brick_position = lego_model[integer_step_number].correct_position
 
     return brick_position
@@ -303,17 +329,17 @@ def blob_analysis(frame, comp_frame, min_area, max_area):
     blob_detector = cv2.SimpleBlobDetector_create(params)
     keypoints = blob_detector.detect(frame)
 
-    for c in Contours.cnts:
-        cv2.drawContours(comp_frame, [c], -1, (0, 255, 0), 2)
-        cv2.circle(comp_frame, (Contours.cX, Contours.cY), 7, (255, 255, 255), -1)
-        cv2.putText(comp_frame, "center", (Contours.cX - 20, Contours.cY - 20),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+    # for c in Contours.cnts:
+    #     cv2.drawContours(comp_frame, [c], -1, (0, 255, 0), 2)
+    #     cv2.circle(comp_frame, (Contours.cX, Contours.cY), 7, (255, 255, 255), -1)
+    #     cv2.putText(comp_frame, "center", (Contours.cX - 20, Contours.cY - 20),
+    #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
     
-        x, y, w, h = cv2.boundingRect(c)
-        if w > h:
-            aspect_ratio = float(w)/h
-        else:
-            aspect_ratio = h/float(w)
+    #     x, y, w, h = cv2.boundingRect(c)
+    #     if w > h:
+    #         aspect_ratio = float(w)/h
+    #     else:
+    #         aspect_ratio = h/float(w)
 
         #print(aspect_ratio)
     # print("KEYPOIINTS: ", len(keypoints))
