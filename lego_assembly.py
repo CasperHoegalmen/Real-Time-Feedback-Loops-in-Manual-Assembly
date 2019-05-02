@@ -347,13 +347,23 @@ def check_height(red_white, green_white, blue_white):
 
     thick_area = lego_model[integer_step_number].max_area - LegoBrick.area_range
 
-    if red_white > 400 or green_white > 400 or red_white > 400:
-        if  thick_area - red_white > 50:
+    if red_white > 400:
+        if  red_white - thick_area < 50:
             brick_height = lego_model[integer_step_number].correct_height
+                        
         else:
             brick_height = True
 
-    print(".....", red_white - thick_area)
+        print(".....", red_white - thick_area, "    height is ", brick_height)
+            
+    if blue_white > 400:
+        if blue_white - thick_area < 50:
+            brick_height = lego_model[integer_step_number].correct_height
+            
+        else:
+            brick_height = True
+
+        print(".....", blue_white - thick_area, "    height is ", brick_height)
 
     return brick_height
 
