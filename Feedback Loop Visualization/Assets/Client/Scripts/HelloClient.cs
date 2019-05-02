@@ -87,8 +87,13 @@ public class HelloClient : MonoBehaviour
                 trigger = false;
                 //correctColor = false;
                 //correctShape = false;
+                GameObject.Find("InstructionText").GetComponent<InstructionsScript>().startTimer();
+                
+                if(GameObject.Find("InstructionText").GetComponent<InstructionsScript>().timerFin == true){
+
                 StartCoroutine(changeToNextBrick(brick));
                 brick++;
+                }
             }
         }
     }
