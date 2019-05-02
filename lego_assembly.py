@@ -53,7 +53,7 @@ green_high_val = 157
 red_low_hue = 0
 red_high_hue = 7
 
-red_low_sat = 77
+red_low_sat = 151
 red_high_sat = 255
 
 red_low_val = 0
@@ -231,6 +231,10 @@ def frame_threshold(frame, hsv_frame):
     #     print("POINT: ", x, ", ", y)
     #     print("WIDTH: ", w, "    HEIGHT: ", h)
 
+    print("RED: ", n_white_red_color)
+    print("GREEN: ", n_white_green_color)
+    print("BLUE: ", n_white_blue_color)
+
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
 
     if lego_model[integer_step_number].correct_color == True and current_shape == True and brick_position == True:
@@ -290,14 +294,20 @@ def color_function(red, green, blue):
 def check_position(red, green, blue):
     global brick_position
 
-    offset = 10
-    red = red[lego_model[integer_step_number].y - offset: lego_model[integer_step_number].h + offset, lego_model[integer_step_number].x - offset: lego_model[integer_step_number].w + offset]
-    green = green[lego_model[integer_step_number].y - offset: lego_model[integer_step_number].h + offset, lego_model[integer_step_number].x - offset: lego_model[integer_step_number].w + offset]
-    blue = blue[lego_model[integer_step_number].y - offset: lego_model[integer_step_number].h + offset, lego_model[integer_step_number].x - offset: lego_model[integer_step_number].w + offset]
+    red = red[lego_model[integer_step_number].y: lego_model[integer_step_number].h, lego_model[integer_step_number].x: lego_model[integer_step_number].w]
+    green = green[lego_model[integer_step_number].y: lego_model[integer_step_number].h, lego_model[integer_step_number].x: lego_model[integer_step_number].w]
+    blue = blue[lego_model[integer_step_number].y: lego_model[integer_step_number].h, lego_model[integer_step_number].x: lego_model[integer_step_number].w]
 
     red_white_pixels = np.sum(red == 255)
     green_white_pixels = np.sum(green == 255)
     blue_white_pixels = np.sum(blue == 255)
+
+    # cv2.imshow("ROI", red)
+
+    #     if w > h:
+    #         aspect_ratio = float(w)/h
+    #     else:
+    #         aspect_ratio = h/float(w)
 
     if lego_model[integer_step_number].min_area < red_white_pixels and lego_model[integer_step_number].max_area > red_white_pixels:
         brick_position = lego_model[integer_step_number].correct_position
@@ -416,7 +426,9 @@ def main_loop():
         frame_to_bgr = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
         #Apply a Gaussian blur that has 11x11 kernel size to the BGR frame
-        frame_to_bgr = cv2.GaussianBlur(frame_to_bgr, (11, 11), 0)
+        frame_to_bgr = cv2.GaussianBlur(frame_to_bgr, (5, 5), 0)
+
+        cv2.imshow("BGR Frame", frame_to_bgr)
         
         #Convert camera feed from BGR color space to HSV color space
         hsv_frame = cv2.cvtColor(frame_to_bgr, cv2.COLOR_BGR2HSV)
