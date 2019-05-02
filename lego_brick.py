@@ -4,6 +4,7 @@ class LegoBrick:
     correct_size = True
     #wrong_size = False
     correct_position = True
+    correct_height = False
     y = 0
     x = 0 
     h = 0

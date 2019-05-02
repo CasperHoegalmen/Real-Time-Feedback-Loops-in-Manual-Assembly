@@ -6,6 +6,7 @@ class Connection:
     shape_feedback = ""
     color_feedback = ""
     position_feedback = ""
+    height_feedback = ""
 
     @staticmethod
     def server():
@@ -22,7 +23,7 @@ class Connection:
 
             Connection.string_message = message.decode("utf-8")
             
-            error_feedback = Connection.color_feedback + " " + Connection.shape_feedback + " " + Connection.position_feedback
+            error_feedback = Connection.color_feedback + " " + Connection.shape_feedback + " " + Connection.position_feedback + " " + Connection.height_feedback
             feedbackToUnity = error_feedback.encode()
 
             #  In the real world usage, you just need to replace time.sleep() with
