@@ -9,16 +9,23 @@ public class InstructionsScript : MonoBehaviour
 
     public TextMeshProUGUI instructions;
     public bool timerFin;
+    public bool startTheTimer;
     // Start is called before the first frame update
     void Start()
     {
         instructions = GetComponent<TextMeshProUGUI>();
-        this.gameObject.SetActive(false);
+        startTheTimer = true;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if(startTheTimer == true)
+        {
+            this.gameObject.SetActive(true);
+            startTheTimer = false;
+            startTimer();
+        }
     }
 
     public void startTimer(){
@@ -26,7 +33,6 @@ public class InstructionsScript : MonoBehaviour
     }
 
     IEnumerator actuallyStartTimer(){
-        this.gameObject.SetActive(true);
         timerFin = false;
         timerNum = 3;
         instructions.SetText("Please remove your hand. Next step in " + timerNum +"...");

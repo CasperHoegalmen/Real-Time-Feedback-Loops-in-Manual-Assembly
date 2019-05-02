@@ -82,17 +82,17 @@ public class HelloClient : MonoBehaviour
         Debug.Log(correctColor + " " + correctShape + " " + correctPosition);
         if (trigger)
         {
-            if (correctColor && correctShape && correctPosition)
+            if (!correctColor && !correctShape && !correctPosition)
             {
                 trigger = false;
                 //correctColor = false;
                 //correctShape = false;
-                GameObject.Find("InstructionText").GetComponent<InstructionsScript>().startTimer();
-                
-                if(GameObject.Find("InstructionText").GetComponent<InstructionsScript>().timerFin == true){
+                GameObject.Find("InstructionText").GetComponent<InstructionsScript>().startTheTimer = true;
 
-                StartCoroutine(changeToNextBrick(brick));
-                brick++;
+                if (GameObject.Find("InstructionText").GetComponent<InstructionsScript>().timerFin == true)
+                {
+                    StartCoroutine(changeToNextBrick(brick));
+                    brick++;
                 }
             }
         }
