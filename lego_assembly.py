@@ -6,6 +6,7 @@ import time
 from pyueye import ueye
 from lego_api import CameraApi
 from lego_brick import lego_model
+from lego_brick import LegoBrick
 from server import Connection
 #import asyncio
 
@@ -33,7 +34,7 @@ class Contours:
 blue_low_hue = 70
 blue_high_hue = 135
 
-blue_low_sat = 134
+blue_low_sat = 135
 blue_high_sat = 246
 
 blue_low_val = 0
@@ -56,7 +57,7 @@ red_high_hue = 7
 red_low_sat = 151
 red_high_sat = 255
 
-red_low_val = 0
+red_low_val = 45
 red_high_val = 255
 
 #Feedback loop related variables
@@ -64,6 +65,7 @@ assembly_step_number = ""
 integer_step_number = 0
 current_brick_color = ""
 brick_position = False
+brick_height = False
 current_shape = False
 aspect_ratio = 0
 
@@ -125,6 +127,7 @@ def frame_threshold(frame, hsv_frame):
     global current_shape
     global current_brick_color
     global brick_position
+    global brick_height
     global red_old
     global blue_old
     global green_old
@@ -200,9 +203,9 @@ def frame_threshold(frame, hsv_frame):
     n_white_green_color = np.sum(green_next_frame == 255)  
     n_white_blue_color = np.sum(blue_next_frame == 255)
 
-    # print("RED:   ", np.sum(red_next_frame == 255))
-    # print("GREEN: ", np.sum(green_next_frame == 255))
-    # print("BLUE:  ", np.sum(blue_next_frame == 255))
+    print("RED:   ", np.sum(red_next_frame == 255))
+    print("GREEN: ", np.sum(green_next_frame == 255))
+    print("BLUE:  ", np.sum(blue_next_frame == 255))
 
     #Color identification that is used in the error feedback function
     color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
@@ -226,23 +229,26 @@ def frame_threshold(frame, hsv_frame):
 
     check_position(red_next_frame, green_next_frame, blue_next_frame)
 
-    for c in Contours.cnts:
-        x, y, w, h = cv2.boundingRect(c)
-        print("POINT: ", x, ", ", y)
-        print("WIDTH: ", w, "    HEIGHT: ", h)
+    check_height(n_white_red_color, n_white_green_color, n_white_blue_color)
 
-    # print("RED: ", n_white_red_color)
-    # print("GREEN: ", n_white_green_color)
-    # print("BLUE: ", n_white_blue_color)
+    # for c in Contours.cnts:
+    #     x, y, w, h = cv2.boundingRect(c)
+    #     print("POINT: ", x, ", ", y)
+    #     print("WIDTH: ", w, "    HEIGHT: ", h)
 
-    error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
+    #print("RED: ", n_white_red_color)
+    #print("GREEN: ", n_white_green_color)
+    #print("BLUE: ", n_white_blue_color)
 
-    if lego_model[integer_step_number].correct_color == True and current_shape == True and brick_position == True:
+    error_feedback(integer_step_number, current_brick_color, current_shape, brick_position, brick_height)
+
+    if lego_model[integer_step_number].correct_color == True and current_shape == True and brick_position == True and brick_height == True:
         frame_thread = threading.Thread(target = save_frames, args = (3, red_mask_morph, green_mask_morph, blue_mask_morph,))
         frame_thread.start()
        
     current_shape = False
     brick_position = False
+    brick_height = False
     lego_model[integer_step_number].correct_color = False
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
@@ -261,23 +267,6 @@ def frame_threshold(frame, hsv_frame):
 def frame_morph(kernel, frame_original, frame_to_be_morphed, morphology_method):
     mask_morph = cv2.morphologyEx(frame_to_be_morphed, morphology_method, kernel)
     return mask_morph
-
-def color_function(red, green, blue):
-    global current_brick_color
-
-    if red > 500:
-        current_brick_color = "Red"
-
-    elif green > 500:
-        current_brick_color = "Green"
-
-    elif blue > 500:
-        current_brick_color = "Blue"
-
-    else: 
-        current_brick_color = "No predefined color is detected"
-
-    return current_brick_color
 
 # def check_position(pixelthreshold):
 #     global brick_position
@@ -331,9 +320,7 @@ def blob_analysis(frame, comp_frame, min_area, max_area):
     params.maxArea = max_area
 
     params.filterByCircularity = False
-
     params.filterByConvexity = False
-
     params.filterByInertia = False
     
     blob_detector = cv2.SimpleBlobDetector_create(params)
@@ -355,7 +342,58 @@ def blob_analysis(frame, comp_frame, min_area, max_area):
     # print("KEYPOIINTS: ", len(keypoints))
     return keypoints
 
-def error_feedback(step_number, color_to_use, shape_to_use, position):
+def check_height(red_white, green_white, blue_white):
+    global brick_height
+
+    current_brick = lego_model[integer_step_number].max_area - LegoBrick.area_range
+
+    if red_white > 400:
+        if  red_white - current_brick < 10:
+            brick_height = lego_model[integer_step_number].correct_height
+                        
+        else:
+            brick_height = True
+
+        print(".....", red_white - current_brick, "    height is ", brick_height)
+            
+    if blue_white > 400:
+        if blue_white - current_brick < 10:
+            brick_height = lego_model[integer_step_number].correct_height
+            
+        else:
+            brick_height = True
+
+        print(".....", blue_white - current_brick, "    height is ", brick_height)
+
+    if green_white > 400:
+        if green_white - current_brick < 10:
+            brick_height = lego_model[integer_step_number].correct_height
+            
+        else:
+            brick_height = True
+
+        print(".....", green_white - current_brick, "    height is ", brick_height)
+
+    return brick_height
+
+def color_function(red, green, blue):
+    global current_brick_color
+
+    if red > 400:
+        current_brick_color = "Red"
+
+    elif green > 400:
+        current_brick_color = "Green"
+
+    elif blue > 400:
+        current_brick_color = "Blue"
+
+    else: 
+        current_brick_color = "No predefined color is detected"
+
+    return current_brick_color
+
+def error_feedback(step_number, color_to_use, shape_to_use, position, height):
 
     #print("Step number is ", step_number)
     #print("Color is " + color_to_use)
@@ -377,10 +415,16 @@ def error_feedback(step_number, color_to_use, shape_to_use, position):
     else:
         Connection.color_feedback = "Incorrect"
 
-    if position == False and shape_to_use == False and color_to_use == "No predefined color is detected":
+    if height == True:
+        Connection.height_feedback = "Correct"
+    else:
+        Connection.height_feedback = "Incorrect"
+
+    if position == False and shape_to_use == False and color_to_use == "No predefined color is detected" and height == False:
         Connection.shape_feedback = "Incorrect"
         Connection.color_feedback = "Incorrect"
         Connection.position_feedback = "Incorrect"
+        Connection.height_feedback = "Incorrect"
 
 def save_frames(delay, red, green, blue):
     global red_old
