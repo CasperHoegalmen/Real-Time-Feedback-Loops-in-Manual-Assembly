@@ -4,6 +4,7 @@ class LegoBrick:
     correct_size = True
     #wrong_size = False
     correct_position = True
+    correct_height = False
     y = 0
     x = 0 
     h = 0
@@ -16,19 +17,19 @@ class LegoBrick:
     position_offset = 10
 
 brick1 = LegoBrick()
-brick1.x = 297 - LegoBrick.position_offset
-brick1.y = 273 - LegoBrick.position_offset
-brick1.h = 316 + LegoBrick.position_offset
-brick1.w = 382 + LegoBrick.position_offset
-brick1.min_area = 3570 - LegoBrick.area_range
-brick1.max_area = 3570 + LegoBrick.area_range
+brick1.x = 309 - LegoBrick.position_offset
+brick1.y = 288 - LegoBrick.position_offset
+brick1.h = 331 + LegoBrick.position_offset
+brick1.w = 395 + LegoBrick.position_offset
+brick1.min_area = 3510 - LegoBrick.area_range
+brick1.max_area = 3510 + LegoBrick.area_range
 brick1.color = "Red"
 
 brick2 = LegoBrick()
-brick2.x = 304 - LegoBrick.position_offset
-brick2.y = 192 - LegoBrick.position_offset
-brick2.h = 236 + LegoBrick.position_offset
-brick2.w = 389 + LegoBrick.position_offset
+brick2.x = 309 - LegoBrick.position_offset
+brick2.y = 202 - LegoBrick.position_offset
+brick2.h = 247 + LegoBrick.position_offset
+brick2.w = 396 + LegoBrick.position_offset
 brick2.min_area = 3610 - LegoBrick.area_range
 brick2.max_area = 3610 + LegoBrick.area_range
 brick2.color = "Red"
