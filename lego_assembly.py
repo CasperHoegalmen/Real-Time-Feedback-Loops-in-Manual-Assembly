@@ -33,7 +33,7 @@ class Contours:
 blue_low_hue = 70
 blue_high_hue = 135
 
-blue_low_sat = 0
+blue_low_sat = 134
 blue_high_sat = 246
 
 blue_low_val = 0

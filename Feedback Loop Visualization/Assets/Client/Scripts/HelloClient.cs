@@ -82,7 +82,7 @@ public class HelloClient : MonoBehaviour
         Debug.Log(correctColor + " " + correctShape + " " + correctPosition);
         if (trigger)
         {
-            if (!correctColor && !correctShape && !correctPosition)
+            if (correctColor && correctShape && correctPosition)
             {
                 trigger = false;
                 //correctColor = false;

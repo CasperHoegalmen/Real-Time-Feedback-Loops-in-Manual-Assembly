@@ -13,8 +13,9 @@ public class InstructionsScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        this.gameObject.SetActive(false);
         instructions = GetComponent<TextMeshProUGUI>();
-        startTheTimer = true;
+        //startTheTimer = true;
     }
 
     // Update is called once per frame
