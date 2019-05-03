@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using AsyncIO;
 using NetMQ;
 using NetMQ.Sockets;
+using TMPro;
 
 public class HelloClient : MonoBehaviour
 {
@@ -16,9 +17,12 @@ public class HelloClient : MonoBehaviour
     bool trigger = true;
     bool run = true;
     int brick = 0;
-    
+
+    [SerializeField] private TextMeshProUGUI instructionsText;
+
     private void Start()
     {
+        instructionsText = GameObject.Find("InstructionText").GetComponent<TextMeshProUGUI>();
         _helloRequester = new HelloRequester();
         //brick.GetComponent<BrickChanger>();
         _helloRequester.Start();
@@ -87,13 +91,9 @@ public class HelloClient : MonoBehaviour
                 trigger = false;
                 //correctColor = false;
                 //correctShape = false;
-                GameObject.Find("InstructionText").GetComponent<InstructionsScript>().startTheTimer = true;
-
-                if (GameObject.Find("InstructionText").GetComponent<InstructionsScript>().timerFin == true)
-                {
-                    StartCoroutine(changeToNextBrick(brick));
-                    brick++;
-                }
+           
+                StartCoroutine(changeToNextBrick(brick));
+                brick++;
             }
         }
     }
@@ -102,7 +102,16 @@ public class HelloClient : MonoBehaviour
     {
         _helloRequester.stepNumber++;
         run = false;
-        yield return new WaitForSeconds(2);
+        int timerNum = 3;
+        instructionsText.SetText("Please remove your hand. Next step in " + timerNum + "...");
+        yield return new WaitForSeconds(1);
+        timerNum--;
+        instructionsText.SetText("Please remove your hand. Next step in " + timerNum + "...");
+        yield return new WaitForSeconds(1);
+        timerNum--;
+        instructionsText.SetText("Please remove your hand. Next step in " + timerNum + "...");
+        yield return new WaitForSeconds(1);
+        instructionsText.SetText("");      
         run = true;
         //Debug.Log(_helloRequester.stepNumber);
         brickChanger.ChangeMaterial(brick, "opaque");

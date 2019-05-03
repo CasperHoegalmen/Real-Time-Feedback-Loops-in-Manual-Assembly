@@ -226,14 +226,14 @@ def frame_threshold(frame, hsv_frame):
 
     check_position(red_next_frame, green_next_frame, blue_next_frame)
 
-    # for c in Contours.cnts:
-    #     x, y, w, h = cv2.boundingRect(c)
-    #     print("POINT: ", x, ", ", y)
-    #     print("WIDTH: ", w, "    HEIGHT: ", h)
+    for c in Contours.cnts:
+        x, y, w, h = cv2.boundingRect(c)
+        print("POINT: ", x, ", ", y)
+        print("WIDTH: ", w, "    HEIGHT: ", h)
 
-    print("RED: ", n_white_red_color)
-    print("GREEN: ", n_white_green_color)
-    print("BLUE: ", n_white_blue_color)
+    # print("RED: ", n_white_red_color)
+    # print("GREEN: ", n_white_green_color)
+    # print("BLUE: ", n_white_blue_color)
 
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position)
 
