@@ -34,7 +34,7 @@ class Contours:
 blue_low_hue = 70
 blue_high_hue = 135
 
-blue_low_sat = 0
+blue_low_sat = 135
 blue_high_sat = 246
 
 blue_low_val = 0
@@ -57,7 +57,7 @@ red_high_hue = 7
 red_low_sat = 151
 red_high_sat = 255
 
-red_low_val = 111
+red_low_val = 45
 red_high_val = 255
 
 #Feedback loop related variables
@@ -203,9 +203,9 @@ def frame_threshold(frame, hsv_frame):
     n_white_green_color = np.sum(green_next_frame == 255)  
     n_white_blue_color = np.sum(blue_next_frame == 255)
 
-    # print("RED:   ", np.sum(red_next_frame == 255))
-    # print("GREEN: ", np.sum(green_next_frame == 255))
-    # print("BLUE:  ", np.sum(blue_next_frame == 255))
+    print("RED:   ", np.sum(red_next_frame == 255))
+    print("GREEN: ", np.sum(green_next_frame == 255))
+    print("BLUE:  ", np.sum(blue_next_frame == 255))
 
     #Color identification that is used in the error feedback function
     color_function(n_white_red_color, n_white_green_color, n_white_blue_color)
@@ -345,25 +345,34 @@ def blob_analysis(frame, comp_frame, min_area, max_area):
 def check_height(red_white, green_white, blue_white):
     global brick_height
 
-    thick_area = lego_model[integer_step_number].max_area - LegoBrick.area_range
+    current_brick = lego_model[integer_step_number].max_area - LegoBrick.area_range
 
     if red_white > 400:
-        if  red_white - thick_area < 50:
+        if  red_white - current_brick < 10:
             brick_height = lego_model[integer_step_number].correct_height
                         
         else:
             brick_height = True
 
-        print(".....", red_white - thick_area, "    height is ", brick_height)
+        print(".....", red_white - current_brick, "    height is ", brick_height)
             
     if blue_white > 400:
-        if blue_white - thick_area < 50:
+        if blue_white - current_brick < 10:
             brick_height = lego_model[integer_step_number].correct_height
             
         else:
             brick_height = True
 
-        print(".....", blue_white - thick_area, "    height is ", brick_height)
+        print(".....", blue_white - current_brick, "    height is ", brick_height)
+
+    if green_white > 400:
+        if green_white - current_brick < 10:
+            brick_height = lego_model[integer_step_number].correct_height
+            
+        else:
+            brick_height = True
+
+        print(".....", green_white - current_brick, "    height is ", brick_height)
 
     return brick_height
 

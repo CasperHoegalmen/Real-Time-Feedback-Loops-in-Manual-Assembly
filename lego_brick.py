@@ -21,8 +21,8 @@ brick1.x = 309 - LegoBrick.position_offset
 brick1.y = 288 - LegoBrick.position_offset
 brick1.h = 331 + LegoBrick.position_offset
 brick1.w = 395 + LegoBrick.position_offset
-brick1.min_area = 3570 - LegoBrick.area_range
-brick1.max_area = 3570 + LegoBrick.area_range
+brick1.min_area = 3510 - LegoBrick.area_range
+brick1.max_area = 3510 + LegoBrick.area_range
 brick1.color = "Red"
 
 brick2 = LegoBrick()
