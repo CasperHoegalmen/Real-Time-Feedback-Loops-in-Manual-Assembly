@@ -64,10 +64,10 @@ red_high_val = 255
 purple_low_hue = 117
 purple_high_hue = 125
 
-purple_low_sat = 55
+purple_low_sat = 81
 purple_high_sat = 246
 
-purple_low_val = 37
+purple_low_val = 12
 purple_high_val = 255
 
 # Threshold values for the yellow brick
@@ -77,7 +77,7 @@ yellow_high_hue = 38
 yellow_low_sat = 174
 yellow_high_sat = 255
 
-yellow_low_val = 155
+yellow_low_val = 100
 yellow_high_val = 255
 
 #Feedback loop related variables
@@ -90,19 +90,19 @@ current_shape = False
 aspect_ratio = 0
 
 #Previous frame
-red_old = np.ndarray(shape=(512, 80))
+red_old = np.ndarray(shape=(1024, 160))
 red_old.dtype = np.uint8
 red_old[:,:] = 0
-blue_old = np.ndarray(shape=(512, 80))
+blue_old = np.ndarray(shape=(1024, 160))
 blue_old.dtype = np.uint8
 blue_old[:,:] = 0
-green_old = np.ndarray(shape=(512, 80))
+green_old = np.ndarray(shape=(1024, 160))
 green_old.dtype = np.uint8
 green_old[:,:] = 0
-purple_old = np.ndarray(shape=(512, 80))
+purple_old = np.ndarray(shape=(1024, 160))
 purple_old.dtype = np.uint8
 purple_old[:,:] = 0
-yellow_old = np.ndarray(shape=(512, 80))
+yellow_old = np.ndarray(shape=(1024, 160))
 yellow_old.dtype = np.uint8
 yellow_old[:,:] = 0
 
@@ -583,7 +583,7 @@ def main_loop():
         frame = np.reshape(array,(CameraApi.height.value, CameraApi.width.value, CameraApi.bytes_per_pixel))
 
         # ...resize the image by a half
-        frame = cv2.resize(frame,(0,0), fx=0.5, fy=0.5)
+        # frame = cv2.resize(frame,(0,0), fx=0.5, fy=0.5)
   
         
      #---------------------------------------------------------------------------------------------------------------------------------------
