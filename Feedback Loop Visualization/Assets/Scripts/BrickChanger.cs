@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class BrickChanger : MonoBehaviour
 {
@@ -9,16 +10,20 @@ public class BrickChanger : MonoBehaviour
     [SerializeField] Material opaque;
     [SerializeField] Material transparent;
     [SerializeField] Camera camera;
+    [SerializeField] TextMeshProUGUI stepText;
 
     private Renderer[] childMaterials;
 
     Color colorOfBrick;
     CameraMovement cameraMovement;
 
+    int currentStep = 1;
+
     // Start is called before the first frame update
     void Start()
     {
         cameraMovement = camera.GetComponent<CameraMovement>();
+        stepText.text = "Step " + currentStep + " of " + bricks.Length;
     }
 
     public void ChangeMaterial(int brickToChange, string material)
@@ -47,12 +52,14 @@ public class BrickChanger : MonoBehaviour
 
     public void EnableBrick(int brickToEnable)
     {
+        currentStep++;
         if(brickToEnable >= bricks.Length)
         {
             brickToEnable -= 1;
         }
 
         bricks[brickToEnable].SetActive(true);
+        stepText.text = "Step " + currentStep + " of " + bricks.Length;
         cameraMovement.target = bricks[brickToEnable].transform;
     }
 }
