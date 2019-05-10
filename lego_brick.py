@@ -14,7 +14,7 @@ class LegoBrick:
     min_area = 0
     max_area = 0
     area_range = 200
-    position_offset = 10
+    position_offset = 12
 
 brick1 = LegoBrick()
 brick1.x = 309 - LegoBrick.position_offset
@@ -107,12 +107,12 @@ brick10.max_area = 1920 + LegoBrick.area_range
 brick10.color = "Red"
 
 brick11 = LegoBrick()
-brick11.x = 348 - LegoBrick.position_offset
-brick11.y = 242 - LegoBrick.position_offset
-brick11.h = 287 + LegoBrick.position_offset
-brick11.w = 393 + LegoBrick.position_offset
-brick11.min_area = 1920 - LegoBrick.area_range
-brick11.max_area = 1920 + LegoBrick.area_range
+brick11.x = 649 - LegoBrick.position_offset
+brick11.y = 324 - LegoBrick.position_offset
+brick11.h = 410 + LegoBrick.position_offset
+brick11.w = 819 + LegoBrick.position_offset
+brick11.min_area = 14000 - LegoBrick.area_range
+brick11.max_area = 14000 + LegoBrick.area_range
 brick11.color = "Red"
 
 brick12 = LegoBrick()
@@ -232,5 +232,7 @@ brick24.min_area = 1920 - LegoBrick.area_range
 brick24.max_area = 1920 + LegoBrick.area_range
 brick24.color = "Yellow"
 
-lego_model = [brick1, brick2, brick3, brick4, brick5, brick6, brick7, brick8, brick9, brick10, 
-                brick11, brick12, brick13, brick14, brick15, brick16, brick17, brick18, brick19, brick20, brick21, brick22, brick23, brick24]
+# lego_model = [brick1, brick2, brick3, brick4, brick5, brick6, brick7, brick8, brick9, brick10, 
+#                 brick11, brick12, brick13, brick14, brick15, brick16, brick17, brick18, brick19, brick20, brick21, brick22, brick23, brick24]
+
+lego_model = [brick11, brick12, brick13, brick14, brick15, brick16, brick17, brick18, brick19, brick20, brick21, brick22, brick23, brick24]

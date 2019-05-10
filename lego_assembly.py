@@ -31,13 +31,13 @@ class Contours:
 
 # Variables
 # Threshold values for the blue brick
-blue_low_hue = 100
-blue_high_hue = 115
+blue_low_hue = 110
+blue_high_hue = 116
 
-blue_low_sat = 135
+blue_low_sat = 195
 blue_high_sat = 246
 
-blue_low_val = 40
+blue_low_val = 24
 blue_high_val = 255
 
 # Threshold values for the green brick
@@ -54,7 +54,7 @@ green_high_val = 255
 red_low_hue = 0
 red_high_hue = 7
 
-red_low_sat = 151
+red_low_sat = 135
 red_high_sat = 255
 
 red_low_val = 45
@@ -64,10 +64,10 @@ red_high_val = 255
 purple_low_hue = 117
 purple_high_hue = 125
 
-purple_low_sat = 81
+purple_low_sat = 99
 purple_high_sat = 246
 
-purple_low_val = 12
+purple_low_val = 27
 purple_high_val = 255
 
 # Threshold values for the yellow brick
@@ -77,7 +77,7 @@ yellow_high_hue = 38
 yellow_low_sat = 174
 yellow_high_sat = 255
 
-yellow_low_val = 100
+yellow_low_val = 96
 yellow_high_val = 255
 
 #Feedback loop related variables
@@ -316,10 +316,10 @@ def frame_threshold(frame, hsv_frame):
 
     check_height(n_white_red_color, n_white_green_color, n_white_blue_color, n_white_purple_color, n_white_yellow_color)
 
-    # for c in Contours.cnts:
-    #     x, y, w, h = cv2.boundingRect(c)
-    #     print("POINT: ", x, ", ", y)
-    #     print("WIDTH: ", w, "    HEIGHT: ", h)
+    for c in Contours.cnts:
+        x, y, w, h = cv2.boundingRect(c)
+        print("POINT: ", x, ", ", y)
+        print("WIDTH: ", w, "    HEIGHT: ", h)
 
     #print("RED: ", n_white_red_color)
     #print("GREEN: ", n_white_green_color)
