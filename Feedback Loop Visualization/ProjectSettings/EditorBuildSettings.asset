@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Booklet Simple.unity
+    guid: bad98c6e479ca0849a87d0cccefa5d1f
   m_configObjects: {}

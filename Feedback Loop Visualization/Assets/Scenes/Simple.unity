@@ -1399,6 +1399,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canvas
       objectReference: {fileID: 0}
+    - target: {fileID: 2027198391, guid: d19b517e7cad2f64b80df078b00ae2d4, type: 3}
+      propertyPath: m_havePropertiesChanged
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2027198391, guid: d19b517e7cad2f64b80df078b00ae2d4, type: 3}
+      propertyPath: m_isInputParsingRequired
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1196390080595424023, guid: d19b517e7cad2f64b80df078b00ae2d4,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1549,14 +1557,6 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 926937869, guid: d19b517e7cad2f64b80df078b00ae2d4, type: 3}
-      propertyPath: m_isInputParsingRequired
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2027198391, guid: d19b517e7cad2f64b80df078b00ae2d4, type: 3}
-      propertyPath: m_havePropertiesChanged
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2027198391, guid: d19b517e7cad2f64b80df078b00ae2d4, type: 3}
       propertyPath: m_isInputParsingRequired
       value: 1
       objectReference: {fileID: 0}
