@@ -95,17 +95,19 @@ public class HelloClient : MonoBehaviour
             }
         }
 
+
         Debug.Log(correctColor + " " + correctShape + " " + correctPosition);
         if (trigger)
         {
-            if (correctColor && correctShape && correctPosition)
+            if (correctColor && correctShape && correctPosition && correctHeight)
             {
                 trigger = false;
                 //correctColor = false;
                 //correctShape = false;
-           
+ 
                 StartCoroutine(changeToNextBrick(brick));
                 brick++;
+
             }
         }
     }

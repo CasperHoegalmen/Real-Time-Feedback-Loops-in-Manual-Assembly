@@ -8,6 +8,7 @@ from lego_api import CameraApi
 from lego_brick import lego_model
 from lego_brick import LegoBrick
 from server import Connection
+import keyboard
 #import asyncio
 
 class Contours:
@@ -32,12 +33,12 @@ class Contours:
 # Variables
 # Threshold values for the blue brick
 blue_low_hue = 110
-blue_high_hue = 116
+blue_high_hue = 114
 
-blue_low_sat = 195
+blue_low_sat = 204
 blue_high_sat = 246
 
-blue_low_val = 24
+blue_low_val = 36
 blue_high_val = 255
 
 # Threshold values for the green brick
@@ -52,7 +53,7 @@ green_high_val = 255
 
 # Threshold values for the red brick
 red_low_hue = 0
-red_high_hue = 7
+red_high_hue = 6
 
 red_low_sat = 135
 red_high_sat = 255
@@ -64,7 +65,7 @@ red_high_val = 255
 purple_low_hue = 117
 purple_high_hue = 125
 
-purple_low_sat = 99
+purple_low_sat = 51
 purple_high_sat = 246
 
 purple_low_val = 27
@@ -72,7 +73,7 @@ purple_high_val = 255
 
 # Threshold values for the yellow brick
 yellow_low_hue = 20
-yellow_high_hue = 38
+yellow_high_hue = 29
 
 yellow_low_sat = 174
 yellow_high_sat = 255
@@ -291,6 +292,7 @@ def frame_threshold(frame, hsv_frame):
     print("PURPLE:  ", np.sum(purple_next_frame == 255))
     print("YELLOW:  ", np.sum(yellow_next_frame == 255))
 
+
     #Color identification that is used in the error feedback function
     color_function(n_white_red_color, n_white_green_color, n_white_blue_color, n_white_purple_color, n_white_yellow_color)
 
@@ -316,21 +318,35 @@ def frame_threshold(frame, hsv_frame):
 
     check_height(n_white_red_color, n_white_green_color, n_white_blue_color, n_white_purple_color, n_white_yellow_color)
 
-    for c in Contours.cnts:
-        x, y, w, h = cv2.boundingRect(c)
-        print("POINT: ", x, ", ", y)
-        print("WIDTH: ", w, "    HEIGHT: ", h)
+    # for c in Contours.cnts:
+    #     x, y, w, h = cv2.boundingRect(c)
+    #     print("POINT: ", x, ", ", y)
+    #     print("WIDTH: ", w, "    HEIGHT: ", h)
 
     #print("RED: ", n_white_red_color)
     #print("GREEN: ", n_white_green_color)
     #print("BLUE: ", n_white_blue_color)
+
+    if keyboard.is_pressed('h'):
+        print("EMERGENCY BUTTON!!")
+        brick_height = True
+    
+    if keyboard.is_pressed('s'):
+        print("EMERGENCY BUTTON!!")
+        current_shape = True
+
+    if keyboard.is_pressed('p'):
+        print("EMERGENCY BUTTON!!")
+        brick_position = True
+     
 
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position, brick_height)
 
     if lego_model[integer_step_number].correct_color == True and current_shape == True and brick_position == True and brick_height == True:
         frame_thread = threading.Thread(target = save_frames, args = (3, red_mask_morph, green_mask_morph, blue_mask_morph, purple_mask_morph, yellow_mask_morph,))
         frame_thread.start()
-       
+
+
     current_shape = False
     brick_position = False
     brick_height = False
@@ -439,53 +455,96 @@ def blob_analysis(frame, comp_frame, min_area, max_area):
 
 def check_height(red_white, green_white, blue_white, purple_white, yellow_white):
     global brick_height
+    threshold_normal = -10
+    threshold_flat = 10
 
     current_brick = lego_model[integer_step_number].max_area - LegoBrick.area_range
 
     if red_white > 400:
-        if  red_white - current_brick < 10:
-            brick_height = lego_model[integer_step_number].correct_height
-                        
-        else:
-            brick_height = True
+        if lego_model[integer_step_number].is_flat == False:
+            if  red_white - current_brick < threshold_normal:
+                brick_height = lego_model[integer_step_number].correct_height
+                            
+            else:
+                brick_height = True
 
-        print(".....", red_white - current_brick, "    height is ", brick_height)
+            print(".....", red_white - current_brick, "    height is ", brick_height)
+        else:
+            if  red_white - current_brick < threshold_flat:
+                brick_height = True
+            else:
+                brick_height = lego_model[integer_step_number].correct_height
+
+            print(".....", red_white - current_brick, "    height is ", brick_height)
             
     if blue_white > 400:
-        if blue_white - current_brick < 10:
-            brick_height = lego_model[integer_step_number].correct_height
-            
-        else:
-            brick_height = True
+        if lego_model[integer_step_number].is_flat == False:
+            if blue_white - current_brick < threshold_normal:
+                brick_height = lego_model[integer_step_number].correct_height
+                
+            else:
+                brick_height = True
 
-        print(".....", blue_white - current_brick, "    height is ", brick_height)
+            print(".....", blue_white - current_brick, "    height is ", brick_height)
+        else:
+            if blue_white - current_brick < threshold_flat:
+                brick_height = True
+            else:
+                brick_height = lego_model[integer_step_number].correct_height
+
+            print(".....", blue_white - current_brick, "    height is ", brick_height)
 
     if green_white > 400:
-        if green_white - current_brick < 10:
-            brick_height = lego_model[integer_step_number].correct_height
-            
-        else:
-            brick_height = True
+        if lego_model[integer_step_number].is_flat == False:
+            if green_white - current_brick < threshold_normal:
+                brick_height = lego_model[integer_step_number].correct_height
+                
+            else:
+                brick_height = True
 
-        print(".....", green_white - current_brick, "    height is ", brick_height)
+            print(".....", green_white - current_brick, "    height is ", brick_height)
+        else:
+            if green_white - current_brick < threshold_flat:
+                brick_height = True                
+            else:
+                brick_height = lego_model[integer_step_number].correct_height
+
+            print(".....", green_white - current_brick, "    height is ", brick_height)
 
     if purple_white > 400:
-        if purple_white - current_brick < 10:
-            brick_height = lego_model[integer_step_number].correct_height
-            
-        else:
-            brick_height = True
+        if lego_model[integer_step_number].is_flat == False:
+            if purple_white - current_brick < threshold_normal:
+                brick_height = lego_model[integer_step_number].correct_height
+                
+            else:
+                brick_height = True
 
-        print(".....", purple_white - current_brick, "    height is ", brick_height)
+            print(".....", purple_white - current_brick, "    height is ", brick_height)
+        else:
+            if purple_white - current_brick < threshold_flat:
+                brick_height = lego_model[integer_step_number].correct_height
+                
+            else:
+                brick_height = True
+
+            print(".....", purple_white - current_brick, "    height is ", brick_height)
 
     if yellow_white > 400:
-        if yellow_white - current_brick < 10:
-            brick_height = lego_model[integer_step_number].correct_height
-            
-        else:
-            brick_height = True
+        if lego_model[integer_step_number].is_flat == False:
+            if yellow_white - current_brick < threshold_normal:
+                brick_height = lego_model[integer_step_number].correct_height
+                
+            else:
+                brick_height = True
 
-        print(".....", yellow_white - current_brick, "    height is ", brick_height)
+            print(".....", yellow_white - current_brick, "    height is ", brick_height)
+        else:
+            if yellow_white - current_brick < threshold_flat:
+                brick_height = True                
+            else:
+                brick_height = lego_model[integer_step_number].correct_height
+
+            print(".....", yellow_white - current_brick, "    height is ", brick_height)
 
     return brick_height
 
@@ -518,6 +577,7 @@ def error_feedback(step_number, color_to_use, shape_to_use, position, height):
     #print("Color is " + color_to_use)
     #print("Shape is ", shape_to_use)
 
+
     if position == True:
         Connection.position_feedback = "Correct"
     else:
@@ -528,7 +588,11 @@ def error_feedback(step_number, color_to_use, shape_to_use, position, height):
     else:
         Connection.shape_feedback = "Incorrect"
 
-    if color_to_use == lego_model[step_number].color:
+    if keyboard.is_pressed('c'):
+        print("EMERGENCY BUTTON!!")
+        Connection.color_feedback = "Correct"
+        lego_model[integer_step_number].correct_color = True
+    elif color_to_use == lego_model[step_number].color:
         Connection.color_feedback = "Correct"
         lego_model[step_number].correct_color = True
     else:
