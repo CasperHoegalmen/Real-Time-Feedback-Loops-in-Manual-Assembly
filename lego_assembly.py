@@ -35,50 +35,50 @@ class Contours:
 blue_low_hue = 110
 blue_high_hue = 114
 
-blue_low_sat = 204
+blue_low_sat = 177
 blue_high_sat = 246
 
-blue_low_val = 36
+blue_low_val = 12
 blue_high_val = 255
 
 # Threshold values for the green brick
 green_low_hue = 55
 green_high_hue = 76
 
-green_low_sat = 147
+green_low_sat = 117
 green_high_sat = 213
 
-green_low_val = 18
+green_low_val = 9
 green_high_val = 255
 
 # Threshold values for the red brick
 red_low_hue = 0
 red_high_hue = 6
 
-red_low_sat = 135
+red_low_sat = 144
 red_high_sat = 255
 
-red_low_val = 45
+red_low_val = 15
 red_high_val = 255
 
 # Threshold values for the purple brick
 purple_low_hue = 117
 purple_high_hue = 125
 
-purple_low_sat = 51
+purple_low_sat = 66
 purple_high_sat = 246
 
-purple_low_val = 27
+purple_low_val = 15
 purple_high_val = 255
 
 # Threshold values for the yellow brick
 yellow_low_hue = 20
 yellow_high_hue = 29
 
-yellow_low_sat = 174
+yellow_low_sat = 194
 yellow_high_sat = 255
 
-yellow_low_val = 96
+yellow_low_val = 37
 yellow_high_val = 255
 
 #Feedback loop related variables
@@ -89,6 +89,7 @@ brick_position = False
 brick_height = False
 current_shape = False
 aspect_ratio = 0
+recursion = 0
 
 #Previous frame
 red_old = np.ndarray(shape=(1024, 160))
@@ -182,6 +183,7 @@ def frame_threshold(frame, hsv_frame):
     global green_old
     global purple_old
     global yellow_old
+    global recursion
 
     #Assembly step
     assembly_step_number = Connection.string_message
@@ -343,14 +345,19 @@ def frame_threshold(frame, hsv_frame):
     error_feedback(integer_step_number, current_brick_color, current_shape, brick_position, brick_height)
 
     if lego_model[integer_step_number].correct_color == True and current_shape == True and brick_position == True and brick_height == True:
-        frame_thread = threading.Thread(target = save_frames, args = (3, red_mask_morph, green_mask_morph, blue_mask_morph, purple_mask_morph, yellow_mask_morph,))
-        frame_thread.start()
+        while recursion <= 3000:
+            recursion += 1
+            if recursion == 2999:
+                frame_thread = threading.Thread(target = save_frames, args = (3, red_mask_morph, green_mask_morph, blue_mask_morph, purple_mask_morph, yellow_mask_morph,))
+                frame_thread.start()
 
 
     current_shape = False
     brick_position = False
     brick_height = False
     lego_model[integer_step_number].correct_color = False
+
+    recursion = 0
 
     # Result of all 'rings' that are to be drawn around each of the BLOBs
     final_number_of_blobs = blue_blobs + green_blobs + red_blobs + purple_blobs + yellow_blobs
@@ -433,6 +440,7 @@ def blob_analysis(frame, comp_frame, min_area, max_area):
     params.filterByCircularity = False
     params.filterByConvexity = False
     params.filterByInertia = False
+
     
     blob_detector = cv2.SimpleBlobDetector_create(params)
     keypoints = blob_detector.detect(frame)
@@ -455,8 +463,8 @@ def blob_analysis(frame, comp_frame, min_area, max_area):
 
 def check_height(red_white, green_white, blue_white, purple_white, yellow_white):
     global brick_height
-    threshold_normal = -10
-    threshold_flat = 10
+    threshold_normal = -30
+    threshold_flat = 30
 
     current_brick = lego_model[integer_step_number].max_area - LegoBrick.area_range
 
@@ -615,8 +623,8 @@ def save_frames(delay, red, green, blue, purple, yellow):
     global green_old
     global purple_old
     global yellow_old
+    global recursion
 
-    time.sleep(delay)
 
     dilation_kernel = np.ones((3,3), np.uint8)
 
@@ -631,6 +639,9 @@ def save_frames(delay, red, green, blue, purple, yellow):
     green_old = cv2.dilate(green_old, dilation_kernel, iterations = 1)
     purple_old = cv2.dilate(purple_old, dilation_kernel, iterations = 1)
     yellow_old = cv2.dilate(yellow_old, dilation_kernel, iterations = 1)
+
+
+
     
 
 
