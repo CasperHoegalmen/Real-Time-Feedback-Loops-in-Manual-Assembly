@@ -109,7 +109,7 @@ yellow_old.dtype = np.uint8
 yellow_old[:,:] = 0
 
 # Morphology Kernel
-general_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10,10))
+general_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10,10))
 
 def color_trackbars():
     # Create trackbars for color thresholding
