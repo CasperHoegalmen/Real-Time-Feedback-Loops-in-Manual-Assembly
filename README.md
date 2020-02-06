@@ -1,6 +1,4 @@
 # P6Lego
-Semester project developed by 6th Semster Medialogy students.
-
 
 This 6th semester Medialogy project investigated manual assembly labor and methods for streamlining the process in order to reduce production costs.
 
